@@ -48,31 +48,37 @@ const styles = StyleSheet.create({
         height: screenHeight,
         backgroundColor: 'rgba(0, 0, 0, 0.9)',
     },
-    title: {
-        position: 'absolute',
-        bottom: 10,
-        zIndex: 100,
-        width: screenWidth,
-
-        backgroundColor: 'transparent',
-
-        fontSize: 15,
-        color: '#FFF',
-        textAlign: 'center',
-
-        shadowOffset: {
-            width: 1,
-            height: 1,
-        },
-        shadowRadius: 0.8,
-        shadowColor: 'black',
-        shadowOpacity: 1,
-    },
-    closeButton: {
+    header: {
         position: 'absolute',
         top: 0,
         left: 0,
         zIndex: 100,
+        width: screenWidth,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        /* shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+        shadowRadius: 1,
+        shadowColor: 'black',
+        shadowOpacity: 0.9, */
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        zIndex: 100,
+        width: screenWidth,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        paddingVertical: 5,
+    },
+    title: {
+        fontSize: 15,
+        color: '#FFF',
+        textAlign: 'center',
+    },
+    closeButton: {
+        alignSelf: 'flex-end',
     },
     closeButton__text: {
         backgroundColor: 'transparent',
@@ -81,14 +87,6 @@ const styles = StyleSheet.create({
         color: '#FFF',
         width: 40,
         textAlign: 'center',
-
-        shadowOffset: {
-            width: 0,
-            height: 0,
-        },
-        shadowRadius: 1,
-        shadowColor: 'black',
-        shadowOpacity: 0.9,
     },
     image: {
         flex: 1,
