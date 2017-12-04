@@ -242,10 +242,12 @@ export default class ImageView extends Component<PropsType> {
             const screenSize = axis === 'x' ? screenWidth : screenHeight;
 
             if (screenSize > scale * imageSize) {
-                // nextOffset = (screenSize / 2) - ((imageSize * (scale / this.minimumScale)) / 2);
-                nextOffset = (screenSize / 2) - ((imageSize * scale) / 2);
-                // nextOffset = 0;
-                // console.log(nextOffset, screenHeight, screenSize, imageSize);
+                if (imageWidth >= imageHeight) {
+                    nextOffset = (screenSize - imageSize) / 2;
+                } else {
+                    nextOffset = (screenSize / 2) - ((imageSize * (scale / this.minimumScale)) / 2);
+                }
+
                 Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
 
                 return nextOffset;
