@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
         left: 0,
         zIndex: 100,
         width: screenWidth,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         /* shadowOffset: {
             width: 0,
             height: 0,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
         left: 0,
         zIndex: 100,
         width: screenWidth,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         paddingVertical: 5,
     },
     title: {
@@ -92,9 +92,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-
+    
 const SCALE_MAXIMUM = 5;
 const SCALE_MULTIPLIER = 1.2;
+const TRANSLATE_TRESHHOLD = 50;
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
 const pow2abs = (a: number, b: number): number => Math.abs(a - b) ** 2;
@@ -130,6 +131,7 @@ export default class ImageView extends Component<PropsType> {
             isVisible: props.isVisible,
             modalScale: new Animated.Value(1),
             modalX: new Animated.Value(0),
+            imageScale: 1,
             imageTranslate: [0, 0],
         };
 
@@ -185,10 +187,23 @@ export default class ImageView extends Component<PropsType> {
 
         const {touches} = event;
         const {dx, dy} = gestureState;
+        const {imageWidth, imageHeight} = this.props;
+        const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
+
+        let nextOffsetX = offsetX + dx;
+        let nextOffsetY = offsetY + dy;
+
+        const scaleDeltaX = ((scale * imageWidth) - imageWidth) / 2;
+        const scaleDeltaY = ((scale * imageHeight) - imageHeight) / 2;
+
+        // if (nextOffsetX > scaleDeltaX || nextOffsetX < screenWidth - imageWidth - scaleDeltaX) {
+        //     nextOffsetX = offsetX + (dx * 0.35);
+        // }
+
         // add image current offset
-        this.traslateValue.x.setValue(offsetX + dx);
-        this.traslateValue.y.setValue(offsetY + dy);
+        this.traslateValue.x.setValue(nextOffsetX);
+        this.traslateValue.y.setValue(nextOffsetY);
 
         if (touches.length < 2) {
             return;
@@ -196,7 +211,7 @@ export default class ImageView extends Component<PropsType> {
 
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
-        let nextScale = getScale(currentDistance, initialDistance);
+        let nextScale = getScale(currentDistance, initialDistance) * scale;
 
         if (nextScale < this.minimumScale) {
             nextScale = this.minimumScale;
@@ -204,14 +219,59 @@ export default class ImageView extends Component<PropsType> {
             nextScale = SCALE_MAXIMUM;
         }
 
+        // - Вычисляем размер картинки с учетом следующего scale
+        // - Вычитаем новый размер из исходного и на разницу смещаем картинку в сторону
+
+        const deltaX = (imageWidth - (imageWidth * nextScale)) / 2;
+        const deltaY = (imageHeight - (imageHeight * nextScale)) / 2;
+
+        // this.traslateValue.x.setValue(offsetX - deltaX);
+        // this.traslateValue.y.setValue(offsetY - deltaY);
         this.scaleValue.setValue(nextScale);
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
+        const {imageWidth, imageHeight} = this.props;
+        const {_value: scale} = this.scaleValue;
         const [offsetX, offsetY] = this.state.imageTranslate;
         const {dx, dy} = gestureState;
 
-        this.setState({imageTranslate: [offsetX + dx, offsetY + dy]});
+        const getOffsetWithBounds = (axis) => {
+            let nextOffset = axis === 'x' ? (offsetX + dx) : (offsetY + dy);
+            const imageSize = axis === 'x' ? imageWidth : imageHeight;
+            const screenSize = axis === 'x' ? screenWidth : screenHeight;
+
+            if (screenSize > scale * imageSize) {
+                // nextOffset = (screenSize / 2) - ((imageSize * (scale / this.minimumScale)) / 2);
+                nextOffset = (screenSize / 2) - ((imageSize * scale) / 2);
+                // nextOffset = 0;
+                // console.log(nextOffset, screenHeight, screenSize, imageSize);
+                Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
+
+                return nextOffset;
+            }
+
+            const leftLimit = ((scale * imageSize) - imageSize) / 2;
+            const rightLimit = screenSize - imageSize - leftLimit;
+
+            if (nextOffset > leftLimit) {
+                nextOffset = leftLimit;
+            }
+
+            if (nextOffset < rightLimit) {
+                nextOffset = rightLimit;
+            }
+
+            Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
+
+            return nextOffset;
+        };
+
+        const nextOffsetX = getOffsetWithBounds('x');
+        const nextOffsetY = getOffsetWithBounds('y');
+
+        this.setState({imageTranslate: [nextOffsetX, nextOffsetY]});
+        this.setState({imageScale: scale});
 
         this.gestureInProgress = false;
     }
@@ -237,6 +297,27 @@ export default class ImageView extends Component<PropsType> {
             onPanResponderTerminate: (event: EventType, gestureState: GestureState) =>
                 this.onGestureRelease(event.nativeEvent, gestureState),
         });
+    }
+
+    reset() {
+        this.setState({
+            isImageLoaded: false,
+            modalScale: new Animated.Value(1),
+            modalX: new Animated.Value(0),
+            imageScale: 1,
+            imageTranslate: [0, 0],
+        });
+
+        this.initialTouches = [];
+        this.scrollValue = new Animated.Value(0);
+        this.scaleValue = new Animated.Value(1);
+        this.traslateValue = new Animated.ValueXY();
+    }
+
+    close() {
+        this.setState({isVisible: false});
+
+        this.reset();
     }
 
     async measureImage(): MeasurementType {
@@ -304,7 +385,7 @@ export default class ImageView extends Component<PropsType> {
                 <View style={styles.header}>
                     <TouchableOpacity
                         style={styles.closeButton}
-                        onPress={() => { this.setState({isVisible: false}); }}
+                        onPress={() => { this.close(); }}
                     >
                         <Text style={styles.closeButton__text}>×</Text>
                     </TouchableOpacity>
