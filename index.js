@@ -127,12 +127,16 @@ export default class ImageView extends Component<PropsType> {
         super(props);
 
         this.state = {
-            isImageLoaded: false,
             isVisible: props.isVisible,
             modalScale: new Animated.Value(1),
             modalX: new Animated.Value(0),
+
+            isImageLoaded: false,
             imageScale: 1,
             imageTranslate: [0, 0],
+            imageWidth: props.imageWidth,
+            imageHeight: props.imageHeight,
+            imageMinScale: this.calculateMinScale(props.imageWidth, props.imageHeight),
         };
 
         this.generatePanHandlers();
@@ -140,22 +144,10 @@ export default class ImageView extends Component<PropsType> {
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
         this.traslateValue = new Animated.ValueXY();
-
-        this.minimumScale = 1;
-
-        if (props.imageWidth && props.imageHeight &&
-            (props.imageWidth > screenWidth || props.imageHeight > screenHeight)
-        ) {
-            if (props.imageWidth > props.imageHeight) {
-                this.minimumScale = screenWidth / props.imageWidth;
-            } else {
-                this.minimumScale = screenHeight / props.imageHeight;
-            }
-        }
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
-        const {isVisible} = this.state;
+        const {isVisible, imageWidth, imageHeight} = this.state;
 
         if (typeof nextProps.isVisible !== 'undefined' && nextProps.isVisible !== isVisible) {
             this.state.modalX.setValue(0);
@@ -163,7 +155,16 @@ export default class ImageView extends Component<PropsType> {
             Animated.spring(this.state.modalScale, {
                 toValue: 1,
             }).start();
+
             this.setState({isVisible: nextProps.isVisible});
+        }
+
+        if (nextProps.imageWidth !== imageWidth || nextProps.imageHeight !== imageHeight) {
+            this.setState({
+                imageWidth: nextProps.imageWidth,
+                imageHeight: nextProps.imageHeight,
+                imageMinScale: this.calculateMinScale(nextProps.imageWidth, nextProps.imageHeight),
+            });
         }
     }
 
@@ -187,7 +188,7 @@ export default class ImageView extends Component<PropsType> {
 
         const {touches} = event;
         const {dx, dy} = gestureState;
-        const {imageWidth, imageHeight} = this.props;
+        const {imageWidth, imageHeight, imageMinScale} = this.state;
         const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
 
@@ -213,8 +214,8 @@ export default class ImageView extends Component<PropsType> {
         const initialDistance = getDistance(this.initialTouches);
         let nextScale = getScale(currentDistance, initialDistance) * scale;
 
-        if (nextScale < this.minimumScale) {
-            nextScale = this.minimumScale;
+        if (nextScale < imageMinScale) {
+            nextScale = imageMinScale;
         } else if (nextScale > SCALE_MAXIMUM) {
             nextScale = SCALE_MAXIMUM;
         }
@@ -231,7 +232,7 @@ export default class ImageView extends Component<PropsType> {
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
-        const {imageWidth, imageHeight} = this.props;
+        const {imageWidth, imageHeight, imageMinScale} = this.state;
         const {_value: scale} = this.scaleValue;
         const [offsetX, offsetY] = this.state.imageTranslate;
         const {dx, dy} = gestureState;
@@ -245,7 +246,7 @@ export default class ImageView extends Component<PropsType> {
                 if (imageWidth >= imageHeight) {
                     nextOffset = (screenSize - imageSize) / 2;
                 } else {
-                    nextOffset = (screenSize / 2) - ((imageSize * (scale / this.minimumScale)) / 2);
+                    nextOffset = (screenSize / 2) - ((imageSize * (scale / imageMinScale)) / 2);
                 }
 
                 Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
@@ -276,6 +277,18 @@ export default class ImageView extends Component<PropsType> {
         this.setState({imageScale: scale});
 
         this.gestureInProgress = false;
+    }
+
+    calculateMinScale(imageWidth, imageHeight) {
+        if (imageWidth > screenWidth || imageHeight > screenHeight) {
+            if (imageWidth > imageHeight) {
+                return screenWidth / imageWidth;
+            }
+
+            return screenHeight / imageHeight;
+        }
+
+        return 1;
     }
 
     generatePanHandlers() {
@@ -340,21 +353,19 @@ export default class ImageView extends Component<PropsType> {
     }
 
     render() {
-        const {
-            title,
-            source,
-            imageWidth,
-            imageHeight,
-        } = this.props;
+        const {title, source} = this.props;
 
         const {
             modalX,
             modalScale,
             isVisible,
+
             isImageLoaded,
+            imageWidth,
+            imageHeight,
         } = this.state;
 
-        const {w: measuredWidth, h: measuredHeight} = this.imageMeasurement || {};
+        // const {w: measuredWidth, h: measuredHeight} = this.imageMeasurement || {};
         const animatedStyle = {
             transform: this.traslateValue.getTranslateTransform(),
         };
@@ -367,8 +378,8 @@ export default class ImageView extends Component<PropsType> {
             {
                 position: 'absolute',
                 zIndex: 10,
-                width: measuredWidth || imageWidth,
-                height: measuredHeight || imageHeight,
+                width: imageWidth,
+                height: imageHeight,
                 opacity: isImageLoaded ? 1 : 0,
             },
             animatedStyle,
