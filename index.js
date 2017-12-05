@@ -39,6 +39,7 @@ type PropsType = {
     source: any, // Image source object
     imageWidth: number,
     imageHeight: number,
+    onClose: () => {},
 };
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
@@ -55,13 +56,6 @@ const styles = StyleSheet.create({
         zIndex: 100,
         width: screenWidth,
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        /* shadowOffset: {
-            width: 0,
-            height: 0,
-        },
-        shadowRadius: 1,
-        shadowColor: 'black',
-        shadowOpacity: 0.9, */
     },
     footer: {
         position: 'absolute',
@@ -92,10 +86,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-    
+
 const SCALE_MAXIMUM = 5;
 const SCALE_MULTIPLIER = 1.2;
-const TRANSLATE_TRESHHOLD = 50;
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
 const pow2abs = (a: number, b: number): number => Math.abs(a - b) ** 2;
@@ -110,16 +103,16 @@ function getDistance(touches: Array<TouchType>): number {
     return Math.sqrt(pow2abs(a.pageX, b.pageX) + pow2abs(a.pageY, b.pageY));
 }
 
-function measureNode(node: ?number) {
-    return new Promise((resolve, reject) => {
-        UIManager.measureLayoutRelativeToParent(
-            node,
-            error => reject(error),
-            (x, y, w, h) => {
-                resolve({x, y, w, h});
-            }
-        );
-    });
+function calculateMinScale(imageWidth: number, imageHeight: number): number {
+    if (imageWidth > screenWidth || imageHeight > screenHeight) {
+        if (imageWidth > imageHeight) {
+            return screenWidth / imageWidth;
+        }
+
+        return screenHeight / imageHeight;
+    }
+
+    return 1;
 }
 
 export default class ImageView extends Component<PropsType> {
@@ -128,26 +121,42 @@ export default class ImageView extends Component<PropsType> {
 
         this.state = {
             isVisible: props.isVisible,
+            isPanelsVisible: true,
             modalScale: new Animated.Value(1),
             modalX: new Animated.Value(0),
+
+            title: props.title,
+            source: props.source, 
 
             isImageLoaded: false,
             imageScale: 1,
             imageTranslate: [0, 0],
             imageWidth: props.imageWidth,
             imageHeight: props.imageHeight,
-            imageMinScale: this.calculateMinScale(props.imageWidth, props.imageHeight),
+            imageMinScale: calculateMinScale(props.imageWidth, props.imageHeight),
         };
 
         this.generatePanHandlers();
+
         this.initialTouches = [];
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
         this.traslateValue = new Animated.ValueXY();
+        this.headerTranslateValue = new Animated.ValueXY();
+        this.footerTranslateValue = new Animated.ValueXY();
+    }
+
+    componentDidMount() {
+        this.scaleValue.setValue(this.state.imageMinScale);
+        this.onGestureRelease(null, {dx: 0, dy: 0});
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
-        const {isVisible, imageWidth, imageHeight} = this.state;
+        const {
+            isVisible,
+            source,
+            imageMinScale,
+        } = this.state;
 
         if (typeof nextProps.isVisible !== 'undefined' && nextProps.isVisible !== isVisible) {
             this.state.modalX.setValue(0);
@@ -156,14 +165,26 @@ export default class ImageView extends Component<PropsType> {
                 toValue: 1,
             }).start();
 
-            this.setState({isVisible: nextProps.isVisible});
+            this.setState({
+                isVisible: nextProps.isVisible,
+            });
+
+            this.scaleValue.setValue(imageMinScale);
+            this.onGestureRelease(null, {dx: 0, dy: 0});
         }
 
-        if (nextProps.imageWidth !== imageWidth || nextProps.imageHeight !== imageHeight) {
+        if (nextProps.source !== source) {
+            const imageNextMinScale = calculateMinScale(nextProps.imageWidth, nextProps.imageHeight);
+
             this.setState({
+                title: nextProps.title,
+                source: nextProps.source,
                 imageWidth: nextProps.imageWidth,
                 imageHeight: nextProps.imageHeight,
-                imageMinScale: this.calculateMinScale(nextProps.imageWidth, nextProps.imageHeight),
+                imageMinScale: imageNextMinScale,
+            }, () => {
+                this.scaleValue.setValue(imageNextMinScale);
+                this.onGestureRelease(null, {dx: 0, dy: 0});
             });
         }
     }
@@ -174,9 +195,6 @@ export default class ImageView extends Component<PropsType> {
             return;
         }
 
-        const imageMeasurement = await this.measureImage();
-
-        this.imageMeasurement = imageMeasurement;
         this.gestureInProgress = gestureState.stateID;
         this.initialTouches = event.touches;
     }
@@ -220,11 +238,10 @@ export default class ImageView extends Component<PropsType> {
             nextScale = SCALE_MAXIMUM;
         }
 
-        // - Вычисляем размер картинки с учетом следующего scale
-        // - Вычитаем новый размер из исходного и на разницу смещаем картинку в сторону
+        // TODO: Make drag after limit bound more phisic
 
-        const deltaX = (imageWidth - (imageWidth * nextScale)) / 2;
-        const deltaY = (imageHeight - (imageHeight * nextScale)) / 2;
+        // const deltaX = (imageWidth - (imageWidth * nextScale)) / 2;
+        // const deltaY = (imageHeight - (imageHeight * nextScale)) / 2;
 
         // this.traslateValue.x.setValue(offsetX - deltaX);
         // this.traslateValue.y.setValue(offsetY - deltaY);
@@ -232,7 +249,14 @@ export default class ImageView extends Component<PropsType> {
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
-        const {imageWidth, imageHeight, imageMinScale} = this.state;
+        const {
+            imageScale,
+            imageWidth,
+            imageHeight,
+            imageMinScale,
+            isPanelsVisible,
+        } = this.state;
+
         const {_value: scale} = this.scaleValue;
         const [offsetX, offsetY] = this.state.imageTranslate;
         const {dx, dy} = gestureState;
@@ -273,22 +297,28 @@ export default class ImageView extends Component<PropsType> {
         const nextOffsetX = getOffsetWithBounds('x');
         const nextOffsetY = getOffsetWithBounds('y');
 
-        this.setState({imageTranslate: [nextOffsetX, nextOffsetY]});
-        this.setState({imageScale: scale});
+        // Position haven't changed, so it just tap
+        if (event && !dx && !dy && imageScale === scale) {
+            // toggle footer and header
+            this.setState({isPanelsVisible: !isPanelsVisible});
 
-        this.gestureInProgress = false;
-    }
+            Animated.timing(this.headerTranslateValue.y, {
+                toValue: isPanelsVisible ? -50 : 0,
+                duration: 200,
+            }).start();
 
-    calculateMinScale(imageWidth, imageHeight) {
-        if (imageWidth > screenWidth || imageHeight > screenHeight) {
-            if (imageWidth > imageHeight) {
-                return screenWidth / imageWidth;
-            }
-
-            return screenHeight / imageHeight;
+            Animated.timing(this.footerTranslateValue.y, {
+                toValue: isPanelsVisible ? this.footerHeight : 0,
+                duration: 200,
+            }).start();
         }
 
-        return 1;
+        this.setState({
+            imageScale: scale,
+            imageTranslate: [nextOffsetX, nextOffsetY],
+        });
+
+        this.gestureInProgress = false;
     }
 
     generatePanHandlers() {
@@ -326,46 +356,39 @@ export default class ImageView extends Component<PropsType> {
         this.initialTouches = [];
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
+
         this.traslateValue = new Animated.ValueXY();
+        this.headerTranslateValue = new Animated.ValueXY();
+        this.footerTranslateValue = new Animated.ValueXY();
     }
 
     close() {
+        this.reset();
+
         this.setState({isVisible: false});
 
-        this.reset();
-    }
-
-    async measureImage(): MeasurementType {
-        const parent = ReactNative.findNodeHandle(this.parentNode);
-        const image = ReactNative.findNodeHandle(this.imageNode);
-
-        const [parentMeasurement, imageMeasurement] = await Promise.all([
-            measureNode(parent),
-            measureNode(image),
-        ]);
-
-        return {
-            x: imageMeasurement.x,
-            y: parentMeasurement.y + imageMeasurement.y,
-            w: imageMeasurement.w,
-            h: imageMeasurement.h,
-        };
+        if (typeof this.props.onClose === 'function') {
+            this.props.onClose();
+        }
     }
 
     render() {
-        const {title, source} = this.props;
-
         const {
             modalX,
             modalScale,
             isVisible,
+
+            title,
+            source,
 
             isImageLoaded,
             imageWidth,
             imageHeight,
         } = this.state;
 
-        // const {w: measuredWidth, h: measuredHeight} = this.imageMeasurement || {};
+        const headerTranslate = this.headerTranslateValue.getTranslateTransform();
+        const footerTranslate = this.footerTranslateValue.getTranslateTransform();
+
         const animatedStyle = {
             transform: this.traslateValue.getTranslateTransform(),
         };
@@ -395,14 +418,14 @@ export default class ImageView extends Component<PropsType> {
                     ],
                 }]}
             >
-                <View style={styles.header}>
+                <Animated.View style={[styles.header, {transform: headerTranslate}]}>
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={() => { this.close(); }}
                     >
                         <Text style={styles.closeButton__text}>×</Text>
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
                 <View
                     style={styles.container}
                     ref={(node) => { this.parentNode = node; }}
@@ -416,11 +439,16 @@ export default class ImageView extends Component<PropsType> {
                         {...this.panResponder.panHandlers}
                     />
                 </View>
-                <View style={styles.footer}>
+                <Animated.View
+                    style={[styles.footer, {transform: footerTranslate}]}
+                    onLayout={(event) => {
+                        this.footerHeight = event.nativeEvent.layout.height;
+                    }}
+                >
                     {title &&
                         <Text style={styles.title}>{title}</Text>
                     }
-                </View>
+                </Animated.View>
             </Animated.Modal>
         );
     }
