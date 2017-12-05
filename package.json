@@ -17,6 +17,10 @@
     "preview",
     "component"
   ],
+  "files": [
+    "readme.md",
+    "index.js"
+  ],
   "author": "Anton Kalinin",
   "license": "MIT",
   "bugs": {
