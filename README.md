@@ -20,8 +20,8 @@ const {height} = Dimensions.get('window');
 const image = {
     url: 'https://farm1.static.flickr.com/256/31719945500_f4c3cac93c_b.jpg',
     title: 'Sørvágsvatn is the largest lake in the Faroe Islands',
-    width: 400,
-    height: 800,
+    width: 1000,
+    height: 667,
 },
 
 class Screen extends Component {

@@ -1,12 +1,11 @@
 // @flow
 
 import React, {Component} from 'react';
-import ReactNative, {
+import {
     Text,
     View,
     Image,
     Animated,
-    UIManager,
     StyleSheet,
     Dimensions,
     PanResponder,
@@ -14,13 +13,6 @@ import ReactNative, {
 } from 'react-native';
 
 import Modal from 'react-native-root-modal';
-
-type MeasurementType = {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-};
 
 type TouchType = {
     pageX: number;
@@ -42,6 +34,8 @@ type PropsType = {
     onClose: () => {},
 };
 
+const HEADER_HEIGHT = 60;
+
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 const styles = StyleSheet.create({
     container: {
@@ -54,6 +48,7 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         zIndex: 100,
+        height: HEADER_HEIGHT,
         width: screenWidth,
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
@@ -75,11 +70,11 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-end',
     },
     closeButton__text: {
+        paddingTop: 5,
+        paddingRight: 20,
         backgroundColor: 'transparent',
-
-        fontSize: 35,
+        fontSize: 40,
         color: '#FFF',
-        width: 40,
         textAlign: 'center',
     },
     image: {
@@ -126,7 +121,7 @@ export default class ImageView extends Component<PropsType> {
             modalX: new Animated.Value(0),
 
             title: props.title,
-            source: props.source, 
+            source: props.source,
 
             isImageLoaded: false,
             imageScale: 1,
@@ -144,6 +139,7 @@ export default class ImageView extends Component<PropsType> {
         this.traslateValue = new Animated.ValueXY();
         this.headerTranslateValue = new Animated.ValueXY();
         this.footerTranslateValue = new Animated.ValueXY();
+        this.numberOfTouches = 0;
     }
 
     componentDidMount() {
@@ -190,18 +186,14 @@ export default class ImageView extends Component<PropsType> {
     }
 
     async onGestureStart(event, gestureState) {
-        // Sometimes gesture start happens two or more times rapidly.
-        if (this.gestureInProgress) {
-            return;
-        }
-
         this.gestureInProgress = gestureState.stateID;
         this.initialTouches = event.touches;
+        this.numberOfTouches = event.touches.length;
     }
 
     onGestureMove(event: EventType, gestureState: GestureState) {
-        if (!this.gestureInProgress) {
-            return;
+        if (this.numberOfTouches === 1 && event.touches.length === 2) {
+            this.initialTouches = event.touches;
         }
 
         const {touches} = event;
@@ -210,11 +202,13 @@ export default class ImageView extends Component<PropsType> {
         const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
 
-        let nextOffsetX = offsetX + dx;
-        let nextOffsetY = offsetY + dy;
+        const nextOffsetX = offsetX + dx;
+        const nextOffsetY = offsetY + dy;
 
-        const scaleDeltaX = ((scale * imageWidth) - imageWidth) / 2;
-        const scaleDeltaY = ((scale * imageHeight) - imageHeight) / 2;
+        // TODO: taught drag out of limit bounds
+
+        // const scaleDeltaX = ((scale * imageWidth) - imageWidth) / 2;
+        // const scaleDeltaY = ((scale * imageHeight) - imageHeight) / 2;
 
         // if (nextOffsetX > scaleDeltaX || nextOffsetX < screenWidth - imageWidth - scaleDeltaX) {
         //     nextOffsetX = offsetX + (dx * 0.35);
@@ -230,6 +224,11 @@ export default class ImageView extends Component<PropsType> {
 
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
+
+        if (!initialDistance) {
+            return;
+        }
+
         let nextScale = getScale(currentDistance, initialDistance) * scale;
 
         if (nextScale < imageMinScale) {
@@ -238,14 +237,8 @@ export default class ImageView extends Component<PropsType> {
             nextScale = SCALE_MAXIMUM;
         }
 
-        // TODO: Make drag after limit bound more phisic
-
-        // const deltaX = (imageWidth - (imageWidth * nextScale)) / 2;
-        // const deltaY = (imageHeight - (imageHeight * nextScale)) / 2;
-
-        // this.traslateValue.x.setValue(offsetX - deltaX);
-        // this.traslateValue.y.setValue(offsetY - deltaY);
         this.scaleValue.setValue(nextScale);
+        this.numberOfTouches = event.touches.length;
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
@@ -273,7 +266,9 @@ export default class ImageView extends Component<PropsType> {
                     nextOffset = (screenSize / 2) - ((imageSize * (scale / imageMinScale)) / 2);
                 }
 
-                Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
+                Animated
+                    .timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100})
+                    .start();
 
                 return nextOffset;
             }
@@ -289,7 +284,9 @@ export default class ImageView extends Component<PropsType> {
                 nextOffset = rightLimit;
             }
 
-            Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}).start();
+            Animated
+                .timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100})
+                .start();
 
             return nextOffset;
         };
@@ -303,7 +300,7 @@ export default class ImageView extends Component<PropsType> {
             this.setState({isPanelsVisible: !isPanelsVisible});
 
             Animated.timing(this.headerTranslateValue.y, {
-                toValue: isPanelsVisible ? -50 : 0,
+                toValue: isPanelsVisible ? -HEADER_HEIGHT : 0,
                 duration: 200,
             }).start();
 
@@ -318,14 +315,15 @@ export default class ImageView extends Component<PropsType> {
             imageTranslate: [nextOffsetX, nextOffsetY],
         });
 
+        this.numberOfTouches = 0;
         this.gestureInProgress = false;
     }
 
     generatePanHandlers() {
         this.panResponder = PanResponder.create({
-            onStartShouldSetResponderCapture: () => true,
+            onStartShouldSetPanResponder: () => true,
             onStartShouldSetPanResponderCapture: () => true,
-            onMoveShouldSetResponderCapture: () => true,
+            onMoveShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponderCapture: () => true,
             onPanResponderGrant: (event: EventType, gestureState: GestureState) => {
                 this.onGestureStart(event.nativeEvent, gestureState);
