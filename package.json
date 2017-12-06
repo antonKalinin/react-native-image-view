@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/antonKalinin/react-native-image-view.git"
   },
+  "peerDependencies": {
+    "react-native-root-modal": "^2.2.0"
+  },
   "keywords": [
     "react-native",
     "image",
