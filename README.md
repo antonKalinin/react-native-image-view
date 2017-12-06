@@ -6,12 +6,7 @@ React Native component for viewing images with zoom in modal.
 
 ```bash
 npm install --save react-native-image-view
-
-react-native link
 ```
-
-This component is using `react-native-root-modal` to allow pinch zoom inside modal,
-so it necessary to call `react-native link`
 
 
 ## Getting Started

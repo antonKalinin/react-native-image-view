@@ -1,6 +1,6 @@
 {
   "name": "react-native-image-view",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "React Native modal image view with zoom",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/antonKalinin/react-native-image-view.git"
   },
-  "peerDependencies": {
+  "dependencies": {
     "react-native-root-modal": "^2.2.0"
   },
   "keywords": [
@@ -21,6 +21,7 @@
     "component"
   ],
   "files": [
+    "package.json",
     "readme.md",
     "index.js"
   ],
