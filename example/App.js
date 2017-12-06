@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import {View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 
-import ImageView from '../index.js';
+import ImageView from 'react-native-image-view';
 
 const images = [
   {
     url: 'https://farm1.static.flickr.com/256/31719945500_f4c3cac93c_b.jpg',
-    title: 'Retrieve the width and height (in pixels) of an image prior to displaying it. This method can fail if the image cannot be found, or fails to download.',
-    width: 400,
-    height: 800,
+    title: 'Sørvágsvatn is the largest lake in the Faroe Islands',
+    width: 1000,
+    height: 667,
   },
 ];
 
@@ -38,7 +38,7 @@ export default class App extends Component {
               onPress={() => {
                 this.setState({
                   isImageViewVisible: true,
-                  image,
+                  currentImage: image,
                 });
               }}>
               <Image
