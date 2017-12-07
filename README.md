@@ -10,7 +10,7 @@ npm install --save react-native-image-view
 
 ## Demo
 
-![](https://github.com/antonKalinin/react-native-image-view/blob/master/static/demo.gif)
+![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo.gif)
 
 ## Usage
 ```jsx
