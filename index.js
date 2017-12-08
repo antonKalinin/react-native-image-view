@@ -86,7 +86,7 @@ const SCALE_MAXIMUM = 5;
 const SCALE_MULTIPLIER = 1.2;
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
-const pow2abs = (a: number, b: number): number => Math.abs(a - b) ** 2;
+const pow2abs = (a: number, b: number): number => Math.pow(Math.abs(a - b), 2);
 
 function getDistance(touches: Array<TouchType>): number {
     const [a, b] = touches;
