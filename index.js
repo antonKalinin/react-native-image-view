@@ -140,11 +140,7 @@ export default class ImageView extends Component<PropsType> {
         this.headerTranslateValue = new Animated.ValueXY();
         this.footerTranslateValue = new Animated.ValueXY();
         this.numberOfTouches = 0;
-    }
-
-    componentDidMount() {
-        this.scaleValue.setValue(this.state.imageMinScale);
-        this.onGestureRelease(null, {dx: 0, dy: 0});
+        this.doubleTapTimer = null;
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
@@ -157,8 +153,11 @@ export default class ImageView extends Component<PropsType> {
         if (typeof nextProps.isVisible !== 'undefined' && nextProps.isVisible !== isVisible) {
             this.state.modalX.setValue(0);
             this.state.modalScale.setValue(0);
-            Animated.spring(this.state.modalScale, {
+            Animated.timing(this.state.modalScale, {
+                duration: 250,
                 toValue: 1,
+            }, {
+                useNativeDriver: true,
             }).start();
 
             this.setState({
@@ -247,10 +246,9 @@ export default class ImageView extends Component<PropsType> {
             imageWidth,
             imageHeight,
             imageMinScale,
-            isPanelsVisible,
         } = this.state;
 
-        const {_value: scale} = this.scaleValue;
+        let {_value: scale} = this.scaleValue;
         const [offsetX, offsetY] = this.state.imageTranslate;
         const {dx, dy} = gestureState;
 
@@ -291,24 +289,27 @@ export default class ImageView extends Component<PropsType> {
             return nextOffset;
         };
 
-        const nextOffsetX = getOffsetWithBounds('x');
-        const nextOffsetY = getOffsetWithBounds('y');
-
         // Position haven't changed, so it just tap
         if (event && !dx && !dy && imageScale === scale) {
-            // toggle footer and header
-            this.setState({isPanelsVisible: !isPanelsVisible});
+            if (this.doubleTapTimer) {
+                clearTimeout(this.doubleTapTimer);
+                this.doubleTapTimer = null;
 
-            Animated.timing(this.headerTranslateValue.y, {
-                toValue: isPanelsVisible ? -HEADER_HEIGHT : 0,
-                duration: 200,
-            }).start();
+                scale = scale === imageMinScale ? scale * 3 : imageMinScale;
 
-            Animated.timing(this.footerTranslateValue.y, {
-                toValue: isPanelsVisible ? this.footerHeight : 0,
-                duration: 200,
-            }).start();
+                Animated
+                    .timing(this.scaleValue, {toValue: scale, duration: 300})
+                    .start();
+            } else {
+                this.doubleTapTimer = setTimeout(() => {
+                    this.togglePanels();
+                    this.doubleTapTimer = null;
+                }, 250);
+            }
         }
+
+        const nextOffsetX = getOffsetWithBounds('x');
+        const nextOffsetY = getOffsetWithBounds('y');
 
         this.setState({
             imageScale: scale,
@@ -317,6 +318,28 @@ export default class ImageView extends Component<PropsType> {
 
         this.numberOfTouches = 0;
         this.gestureInProgress = false;
+    }
+
+    onImageLoaded() {
+        const {source, imageWidth, imageHeight} = this.state;
+        this.setState({isImageLoaded: true});
+
+        Image.getSize(source.uri, (width, height) => {
+            if (width === imageWidth && height === imageHeight) {
+                return;
+            }
+
+            const imageMinScale = calculateMinScale(width, height);
+
+            this.setState({
+                imageWidth: width,
+                imageHeight: height,
+                imageMinScale,
+            }, () => {
+                this.scaleValue.setValue(imageMinScale);
+                this.onGestureRelease(null, {dx: 0, dy: 0});
+            });
+        });
     }
 
     generatePanHandlers() {
@@ -340,6 +363,22 @@ export default class ImageView extends Component<PropsType> {
             onPanResponderTerminate: (event: EventType, gestureState: GestureState) =>
                 this.onGestureRelease(event.nativeEvent, gestureState),
         });
+    }
+
+    togglePanels() {
+        const {isPanelsVisible} = this.state;
+        // toggle footer and header
+        this.setState({isPanelsVisible: !isPanelsVisible});
+
+        Animated.timing(this.headerTranslateValue.y, {
+            toValue: isPanelsVisible ? -HEADER_HEIGHT : 0,
+            duration: 200,
+        }).start();
+
+        Animated.timing(this.footerTranslateValue.y, {
+            toValue: isPanelsVisible ? this.footerHeight : 0,
+            duration: 200,
+        }).start();
     }
 
     reset() {
@@ -399,8 +438,8 @@ export default class ImageView extends Component<PropsType> {
             {
                 position: 'absolute',
                 zIndex: 10,
-                width: imageWidth,
-                height: imageHeight,
+                width: imageWidth || 1,
+                height: imageHeight || 1,
                 opacity: isImageLoaded ? 1 : 0,
             },
             animatedStyle,
@@ -416,7 +455,9 @@ export default class ImageView extends Component<PropsType> {
                     ],
                 }]}
             >
-                <Animated.View style={[styles.header, {transform: headerTranslate}]}>
+                <Animated.View
+                    style={[styles.header, {transform: headerTranslate}]}
+                >
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={() => { this.close(); }}
@@ -433,20 +474,22 @@ export default class ImageView extends Component<PropsType> {
                         resizeMode='cover'
                         style={imageStyle}
                         ref={(node) => { this.imageNode = node; }}
-                        onLoad={() => this.setState({isImageLoaded: true})}
+                        onLoad={() => this.onImageLoaded()}
                         {...this.panResponder.panHandlers}
                     />
                 </View>
-                <Animated.View
-                    style={[styles.footer, {transform: footerTranslate}]}
-                    onLayout={(event) => {
-                        this.footerHeight = event.nativeEvent.layout.height;
-                    }}
-                >
-                    {title &&
-                        <Text style={styles.title}>{title}</Text>
-                    }
-                </Animated.View>
+                {title &&
+                    <Animated.View
+                        style={[styles.footer, {transform: footerTranslate}]}
+                        onLayout={(event) => {
+                            this.footerHeight = event.nativeEvent.layout.height;
+                        }}
+                    >
+                        {title &&
+                            <Text style={styles.title}>{title}</Text>
+                        }
+                    </Animated.View>
+                }
             </Animated.Modal>
         );
     }
