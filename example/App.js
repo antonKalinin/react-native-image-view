@@ -1,12 +1,26 @@
 import React, { Component } from 'react';
-import {View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 
 import ImageView from 'react-native-image-view';
 
+const {width, height} = Dimensions.get('window');
+
 const images = [
   {
-    url: 'https://farm1.static.flickr.com/256/31719945500_f4c3cac93c_b.jpg',
-    title: 'Sørvágsvatn is the largest lake in the Faroe Islands',
+    url: 'https://i.ytimg.com/vi/QC1ibd5gImY/maxresdefault.jpg',
+    title: 'Kirkjufell (Icelandic for “Church Mountain Falls”) on the north coast of the Snæfellsnes Peninsula',
+    width: 1000,
+    height: 667,
+  },
+  {
+    url: 'http://localhost:3000',
+    title: 'Godafoss waterfall at sunset',
     width: 1000,
     height: 667,
   },
@@ -27,7 +41,7 @@ export default class App extends Component {
   }
 
   render() {
-    const { isImageViewVisible, currentImage } = this.state;
+    const {isImageViewVisible, currentImage} = this.state;
 
     return (
       <View style={styles.container}>
@@ -42,7 +56,7 @@ export default class App extends Component {
                 });
               }}>
               <Image
-                style={{ width: 200, height: 200 }}
+                style={{width: width, height: 300}}
                 source={{ uri: image.url }}
                 resizeMode="center"
               />
@@ -64,8 +78,9 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ecf0f1',
+    backgroundColor: '#fff',
   },
 });

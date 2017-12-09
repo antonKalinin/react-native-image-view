@@ -6,6 +6,8 @@ import {
     View,
     Image,
     Animated,
+    Platform,
+    StatusBar,
     StyleSheet,
     Dimensions,
     PanResponder,
@@ -54,11 +56,12 @@ const styles = StyleSheet.create({
     },
     footer: {
         position: 'absolute',
-        bottom: 0,
+        bottom: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         left: 0,
         zIndex: 100,
         width: screenWidth,
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        paddingHorizontal: 10,
         paddingVertical: 5,
     },
     title: {
@@ -485,9 +488,7 @@ export default class ImageView extends Component<PropsType> {
                             this.footerHeight = event.nativeEvent.layout.height;
                         }}
                     >
-                        {title &&
-                            <Text style={styles.title}>{title}</Text>
-                        }
+                        <Text style={styles.title}>{title}</Text>
                     </Animated.View>
                 }
             </Animated.Modal>

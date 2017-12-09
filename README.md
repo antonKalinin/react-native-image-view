@@ -1,6 +1,6 @@
 [![npm version](https://badge.fury.io/js/react-native-image-view.svg)](https://badge.fury.io/js/react-native-image-view)
 
-React Native component for viewing images with zoom in modal.
+React Native modal image view with pinch zoom.
 
 ## Installation
 
@@ -8,11 +8,33 @@ React Native component for viewing images with zoom in modal.
 npm install --save react-native-image-view
 ```
 
+### Reasons
+
+The functionality of this component could be done by placing ScrollView in Modal.
+Unfortunately ScrollView supports zoom only in iOS. To allow same in Android this component is done.
+
+There is a problem with detecting multiple touches in standard Modal component ([issue](https://github.com/facebook/react-native/issues/14295)) that is why
+this component is using `react-native-root-modal`.
+
 ## Demo
 
-![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo.gif)
+![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_ios.gif)
+![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_android.gif)
 
 ## Usage
+```jsx
+import ImageView from 'react-native-image-view';
+
+<ImageView
+  source={{ /* standard Image source object */ }}
+  imageWidth={/* number, fullsize image width */}
+  imageHeight={/* number, fullsize image height */}
+  title={/* string, optional */}
+  isVisible={/* boolean */}
+/>
+```
+
+## Example
 ```jsx
 import React, { Component } from 'react';
 import {View, Image, TouchableOpacity, StyleSheet } from 'react-native';
