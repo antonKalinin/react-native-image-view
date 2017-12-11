@@ -2,6 +2,8 @@
 
 React Native modal image view with pinch zoom.
 
+Try with expo: https://expo.io/@antonkalinin/react-native-image-view
+
 ## Installation
 
 ```bash

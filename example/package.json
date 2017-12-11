@@ -1,23 +1,10 @@
 {
-  "name": "example",
-  "version": "0.0.1",
+  "main": "node_modules/expo/AppEntry.js",
   "private": true,
-  "scripts": {
-    "start": "node node_modules/react-native/local-cli/cli.js start",
-    "test": "jest"
-  },
   "dependencies": {
+    "expo": "^23.0.0",
     "react": "16.0.0",
-    "react-native": "0.51.0",
-    "react-native-image-view": "latest"
-  },
-  "devDependencies": {
-    "babel-jest": "21.2.0",
-    "babel-preset-react-native": "4.0.0",
-    "jest": "21.2.1",
-    "react-test-renderer": "16.0.0"
-  },
-  "jest": {
-    "preset": "react-native"
+    "react-native": "https://github.com/expo/react-native/archive/sdk-23.0.0.tar.gz",
+    "react-native-image-view": "^1.0.8"
   }
 }

@@ -19,10 +19,10 @@ const images = [
     height: 667,
   },
   {
-    url: 'http://localhost:3000',
+    url: 'https://ak9.picdn.net/shutterstock/videos/26459969/thumb/1.jpg',
     title: 'Godafoss waterfall at sunset',
-    width: 1000,
-    height: 667,
+    width: 853,
+    height: 480,
   },
 ];
 
@@ -57,7 +57,7 @@ export default class App extends Component {
               }}>
               <Image
                 style={{width: width, height: 300}}
-                source={{ uri: image.url }}
+                source={{uri: image.url}}
                 resizeMode="center"
               />
             </TouchableOpacity>
