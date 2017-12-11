@@ -16,10 +16,23 @@ Unfortunately ScrollView supports zoom only in iOS. To allow same in Android thi
 There is a problem with detecting multiple touches in standard Modal component ([issue](https://github.com/facebook/react-native/issues/14295)) that is why
 this component is using `react-native-root-modal`.
 
+
+## Features
+
+- Pinch zoom
+- Double tap to zoom
+- ~~Custom title component~~
+- ~~Inertial scroll~~
+- ~~Slide to close~~
+
+_Please, star this repo to let me know that this features is important for you._
+
 ## Demo
 
-![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_ios.gif)
-![](https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_android.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_ios.gif" height="400" />
+  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_android.gif" height="400" />
+</p>
 
 ## Usage
 ```jsx
