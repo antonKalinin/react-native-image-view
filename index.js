@@ -134,7 +134,6 @@ export default class ImageView extends Component<PropsType> {
             imageWidth: props.imageWidth,
             imageHeight: props.imageHeight,
             imageMinScale: calculateMinScale(props.imageWidth, props.imageHeight),
-            backgroundOpacity: BACKGROUND_OPACITY,
         };
 
         this.generatePanHandlers();
@@ -142,7 +141,7 @@ export default class ImageView extends Component<PropsType> {
         this.initialTouches = [];
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
-        this.backgroundOpacity = new Animated.Value(BACKGROUND_OPACITY);
+        this.backgroundOpacity = new Animated.Value(0);
         this.traslateValue = new Animated.ValueXY();
         this.headerTranslateValue = new Animated.ValueXY();
         this.footerTranslateValue = new Animated.ValueXY();
@@ -204,7 +203,7 @@ export default class ImageView extends Component<PropsType> {
 
         const {touches} = event;
         const {dx, dy} = gestureState;
-        const {imageWidth, imageHeight, imageMinScale, backgroundOpacity} = this.state;
+        const {imageWidth, imageHeight, imageMinScale} = this.state;
         const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
 
@@ -228,11 +227,10 @@ export default class ImageView extends Component<PropsType> {
 
         this.traslateValue.y.setValue(nextOffsetY);
 
-        if (scale === imageMinScale && imageHeight < screenHeight) {
-            const initialOffsetY = (screenHeight - imageHeight) / 2;
-            const backgroundOpacity = BACKGROUND_OPACITY * Math.abs(initialOffsetY - nextOffsetY) * 0.1;
+        if (scale === imageMinScale && (imageHeight * imageMinScale) < screenHeight) {
+            const backgroundOpacity = Math.abs(dy * 0.002);
 
-            this.backgroundOpacity.setValue(backgroundOpacity);
+            this.backgroundOpacity.setValue(backgroundOpacity > 1 ? 1 : backgroundOpacity);
         }
 
         if (touches.length < 2) {
@@ -283,9 +281,10 @@ export default class ImageView extends Component<PropsType> {
                     nextOffset = (screenSize / 2) - ((imageSize * (scale / imageMinScale)) / 2);
                 }
 
-                Animated
-                    .timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100})
-                    .start();
+                Animated.parallel([
+                    Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}),
+                    Animated.timing(this.backgroundOpacity, {toValue: 0, duration: 100}),
+                ]).start();
 
                 return nextOffset;
             }
@@ -335,7 +334,7 @@ export default class ImageView extends Component<PropsType> {
         if (scale === imageMinScale && Math.abs(vy) > CLOSE_SPEED) {
             Animated
                 .timing(this.traslateValue.y, {
-                    toValue: nextOffsetY + 200 * vy,
+                    toValue: nextOffsetY + (200 * vy),
                     duration: 150,
                 })
                 .start(() => { this.close(); });
@@ -421,8 +420,9 @@ export default class ImageView extends Component<PropsType> {
         });
 
         this.initialTouches = [];
-        this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
+        this.scrollValue = new Animated.Value(0);
+        this.backgroundOpacity = new Animated.Value(0);
 
         this.traslateValue = new Animated.ValueXY();
         this.headerTranslateValue = new Animated.ValueXY();
@@ -451,13 +451,15 @@ export default class ImageView extends Component<PropsType> {
             isImageLoaded,
             imageWidth,
             imageHeight,
-
-            backgroundOpacity,
         } = this.state;
 
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
         const footerTranslate = this.footerTranslateValue.getTranslateTransform();
-        const backgroundColor = `rgba(0, 0, 0, ${backgroundOpacity})`;
+
+        const backgroundColor = this.backgroundOpacity.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['rgba(0, 0, 0, 0.9)', 'rgba(0, 0, 0, 0.2)'],
+        });
 
         const animatedStyle = {
             transform: this.traslateValue.getTranslateTransform(),
@@ -489,7 +491,7 @@ export default class ImageView extends Component<PropsType> {
                             {scale: modalScale},
                             {translateX: modalX},
                         ],
-                    }
+                    },
                 ]}
             >
                 <Animated.View
