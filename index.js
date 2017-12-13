@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     container: {
         width: screenWidth,
         height: screenHeight,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
     },
     header: {
         position: 'absolute',
@@ -85,8 +84,11 @@ const styles = StyleSheet.create({
     },
 });
 
+const CLOSE_SPEED = 1.1;
 const SCALE_MAXIMUM = 5;
 const SCALE_MULTIPLIER = 1.2;
+const BACKGROUND_OPACITY = 0.9;
+
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
 const pow2abs = (a: number, b: number): number => Math.pow(Math.abs(a - b), 2);
@@ -132,6 +134,7 @@ export default class ImageView extends Component<PropsType> {
             imageWidth: props.imageWidth,
             imageHeight: props.imageHeight,
             imageMinScale: calculateMinScale(props.imageWidth, props.imageHeight),
+            backgroundOpacity: BACKGROUND_OPACITY,
         };
 
         this.generatePanHandlers();
@@ -139,6 +142,7 @@ export default class ImageView extends Component<PropsType> {
         this.initialTouches = [];
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
+        this.backgroundOpacity = new Animated.Value(BACKGROUND_OPACITY);
         this.traslateValue = new Animated.ValueXY();
         this.headerTranslateValue = new Animated.ValueXY();
         this.footerTranslateValue = new Animated.ValueXY();
@@ -200,7 +204,7 @@ export default class ImageView extends Component<PropsType> {
 
         const {touches} = event;
         const {dx, dy} = gestureState;
-        const {imageWidth, imageHeight, imageMinScale} = this.state;
+        const {imageWidth, imageHeight, imageMinScale, backgroundOpacity} = this.state;
         const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
 
@@ -217,8 +221,19 @@ export default class ImageView extends Component<PropsType> {
         // }
 
         // add image current offset
-        this.traslateValue.x.setValue(nextOffsetX);
+
+        if (scale !== imageMinScale) {
+            this.traslateValue.x.setValue(nextOffsetX);
+        }
+
         this.traslateValue.y.setValue(nextOffsetY);
+
+        if (scale === imageMinScale && imageHeight < screenHeight) {
+            const initialOffsetY = (screenHeight - imageHeight) / 2;
+            const backgroundOpacity = BACKGROUND_OPACITY * Math.abs(initialOffsetY - nextOffsetY) * 0.1;
+
+            this.backgroundOpacity.setValue(backgroundOpacity);
+        }
 
         if (touches.length < 2) {
             return;
@@ -253,13 +268,14 @@ export default class ImageView extends Component<PropsType> {
 
         let {_value: scale} = this.scaleValue;
         const [offsetX, offsetY] = this.state.imageTranslate;
-        const {dx, dy} = gestureState;
+        const {dx, dy, vy} = gestureState;
 
         const getOffsetWithBounds = (axis) => {
             let nextOffset = axis === 'x' ? (offsetX + dx) : (offsetY + dy);
             const imageSize = axis === 'x' ? imageWidth : imageHeight;
             const screenSize = axis === 'x' ? screenWidth : screenHeight;
 
+            // Less than the screen
             if (screenSize > scale * imageSize) {
                 if (imageWidth >= imageHeight) {
                     nextOffset = (screenSize - imageSize) / 2;
@@ -313,6 +329,17 @@ export default class ImageView extends Component<PropsType> {
 
         const nextOffsetX = getOffsetWithBounds('x');
         const nextOffsetY = getOffsetWithBounds('y');
+
+        // Close modal with animation
+        // when minimum scale and high vertical gesture speed
+        if (scale === imageMinScale && Math.abs(vy) > CLOSE_SPEED) {
+            Animated
+                .timing(this.traslateValue.y, {
+                    toValue: nextOffsetY + 200 * vy,
+                    duration: 150,
+                })
+                .start(() => { this.close(); });
+        }
 
         this.setState({
             imageScale: scale,
@@ -424,10 +451,13 @@ export default class ImageView extends Component<PropsType> {
             isImageLoaded,
             imageWidth,
             imageHeight,
+
+            backgroundOpacity,
         } = this.state;
 
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
         const footerTranslate = this.footerTranslateValue.getTranslateTransform();
+        const backgroundColor = `rgba(0, 0, 0, ${backgroundOpacity})`;
 
         const animatedStyle = {
             transform: this.traslateValue.getTranslateTransform(),
@@ -451,12 +481,16 @@ export default class ImageView extends Component<PropsType> {
         return (
             <Animated.Modal
                 visible={isVisible}
-                style={[styles.modal, {
-                    transform: [
-                        {scale: modalScale},
-                        {translateX: modalX},
-                    ],
-                }]}
+                style={[
+                    styles.modal,
+                    {backgroundColor},
+                    {
+                        transform: [
+                            {scale: modalScale},
+                            {translateX: modalX},
+                        ],
+                    }
+                ]}
             >
                 <Animated.View
                     style={[styles.header, {transform: headerTranslate}]}

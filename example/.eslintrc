@@ -1,0 +1,43 @@
+{
+    "extends": "airbnb",
+    "rules": {
+        "indent": ["error", 4],
+        "comma-dangle": ["error", {
+            "arrays": "always-multiline",
+            "objects": "always-multiline",
+            "imports": "always-multiline",
+            "exports": "always-multiline",
+            "functions": "ignore"
+        }],
+        "no-console": 0,
+        "object-curly-spacing": ["error", "never"],
+        "react/prop-types": ["error", {customValidators: ["skipUndeclared"]}],
+        "react/jsx-indent-props": ["error", 4],
+        "react/jsx-indent": ["error", 4],
+        "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
+        "jsx-quotes": ["error", "prefer-single"],
+        "flowtype/define-flow-type": 1,
+        "flowtype/require-parameter-type": 1,
+        "flowtype/require-return-type": 1,
+        "flowtype/space-after-type-colon": 1,
+        "flowtype/space-before-type-colon": 1,
+        "flowtype/type-id-match": 1,
+        "flowtype/use-flow-type": 1
+    },
+    "root": true,
+    "plugins": [
+        "react",
+        "flowtype"
+    ],
+    "settings": {
+        "flowtype": {
+            "onlyFilesWithFlowAnnotation": true
+        }
+    },
+    "parser": "babel-eslint",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true
+        }
+    }
+}
