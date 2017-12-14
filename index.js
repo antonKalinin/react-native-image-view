@@ -265,6 +265,7 @@ export default class ImageView extends Component<PropsType> {
         } = this.state;
 
         let {_value: scale} = this.scaleValue;
+        const {_value: backgroundOpacity} = this.backgroundOpacity;
         const [offsetX, offsetY] = this.state.imageTranslate;
         const {dx, dy, vy} = gestureState;
 
