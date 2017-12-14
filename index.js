@@ -282,9 +282,11 @@ export default class ImageView extends Component<PropsType> {
                 }
 
                 Animated.parallel([
+                    backgroundOpacity > 0
+                        ? Animated.timing(this.backgroundOpacity, {toValue: 0, duration: 100})
+                        : null,
                     Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}),
-                    Animated.timing(this.backgroundOpacity, {toValue: 0, duration: 100}),
-                ]).start();
+                ].filter(Boolean)).start();
 
                 return nextOffset;
             }
