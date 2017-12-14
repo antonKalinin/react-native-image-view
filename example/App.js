@@ -7,10 +7,9 @@ import {
   Dimensions,
 } from 'react-native';
 
-// import ImageView from 'react-native-image-view';
-import ImageView from './ImageView';
+import ImageView from 'react-native-image-view';
 
-const {width, height} = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 const images = [
   {
