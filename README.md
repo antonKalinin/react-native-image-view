@@ -23,9 +23,9 @@ this component is using `react-native-root-modal`.
 
 - Pinch zoom
 - Double tap to zoom
+- Slide to close
 - ~~Custom title component~~
 - ~~Inertial scroll~~
-- ~~Slide to close~~
 
 _Please, star this repo to let me know that this features is important for you._
 
