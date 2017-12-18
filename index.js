@@ -33,6 +33,7 @@ type PropsType = {
     source: any, // Image source object
     imageWidth: number,
     imageHeight: number,
+    animationType: 'none' | 'fade' | 'scale',
     onClose: () => {},
 };
 
@@ -87,7 +88,6 @@ const styles = StyleSheet.create({
 const CLOSE_SPEED = 1.1;
 const SCALE_MAXIMUM = 5;
 const SCALE_MULTIPLIER = 1.2;
-const BACKGROUND_OPACITY = 0.9;
 
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
@@ -122,8 +122,7 @@ export default class ImageView extends Component<PropsType> {
         this.state = {
             isVisible: props.isVisible,
             isPanelsVisible: true,
-            modalScale: new Animated.Value(1),
-            modalX: new Animated.Value(0),
+            modalAnimation: new Animated.Value(0),
 
             title: props.title,
             source: props.source,
@@ -157,18 +156,18 @@ export default class ImageView extends Component<PropsType> {
         } = this.state;
 
         if (typeof nextProps.isVisible !== 'undefined' && nextProps.isVisible !== isVisible) {
-            this.state.modalX.setValue(0);
-            this.state.modalScale.setValue(0);
-            Animated.timing(this.state.modalScale, {
-                duration: 250,
-                toValue: 1,
-            }, {
-                useNativeDriver: true,
-            }).start();
-
             this.setState({
                 isVisible: nextProps.isVisible,
             });
+
+            if (nextProps.isVisible) {
+                Animated.timing(this.state.modalAnimation, {
+                    duration: 400,
+                    toValue: 1,
+                }, {
+                    useNativeDriver: true,
+                }).start();
+            }
 
             this.scaleValue.setValue(imageMinScale);
             this.onGestureRelease(null, {dx: 0, dy: 0});
@@ -416,8 +415,7 @@ export default class ImageView extends Component<PropsType> {
     reset() {
         this.setState({
             isImageLoaded: false,
-            modalScale: new Animated.Value(1),
-            modalX: new Animated.Value(0),
+            modalAnimation: new Animated.Value(0),
             imageScale: 1,
             imageTranslate: [0, 0],
         });
@@ -443,9 +441,9 @@ export default class ImageView extends Component<PropsType> {
     }
 
     render() {
+        const {animationType} = this.props;
         const {
-            modalX,
-            modalScale,
+            modalAnimation,
             isVisible,
 
             title,
@@ -488,11 +486,11 @@ export default class ImageView extends Component<PropsType> {
                 visible={isVisible}
                 style={[
                     styles.modal,
+                    animationType === 'fade' && {opacity: modalAnimation},
                     {backgroundColor},
-                    {
+                    animationType === 'scale' && {
                         transform: [
-                            {scale: modalScale},
-                            {translateX: modalX},
+                            {scale: modalAnimation},
                         ],
                     },
                 ]}
