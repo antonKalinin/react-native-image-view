@@ -104,8 +104,11 @@ function getDistance(touches: Array<TouchType>): number {
 }
 
 function calculateMinScale(imageWidth: number, imageHeight: number): number {
+    const screenRatio = screenHeight / screenWidth;
+    const imageRatio = imageHeight / imageWidth;
+
     if (imageWidth > screenWidth || imageHeight > screenHeight) {
-        if (imageWidth > imageHeight) {
+        if (screenRatio > imageRatio) {
             return screenWidth / imageWidth;
         }
 
@@ -247,7 +250,7 @@ export default class ImageView extends Component<PropsType> {
 
         if (nextScale < imageMinScale) {
             nextScale = imageMinScale;
-        } else if (nextScale > SCALE_MAXIMUM) {
+        } else if (nextScale > SCALE_MAXIMUM) {flex: 1,
             nextScale = SCALE_MAXIMUM;
         }
 
@@ -354,6 +357,10 @@ export default class ImageView extends Component<PropsType> {
     onImageLoaded() {
         const {source, imageWidth, imageHeight} = this.state;
         this.setState({isImageLoaded: true});
+
+        if (imageWidth && imageHeight) {
+            return;
+        }
 
         Image.getSize(source.uri, (width, height) => {
             if (width === imageWidth && height === imageHeight) {
