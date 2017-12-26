@@ -24,7 +24,7 @@ this component is using `react-native-root-modal`.
 - Pinch zoom
 - Double tap to zoom
 - Slide to close
-- ~~Custom title component~~
+- Custom title component
 - ~~Inertial scroll~~
 
 _Please, star this repo to let me know that this features is important for you._
@@ -32,8 +32,7 @@ _Please, star this repo to let me know that this features is important for you._
 ## Demo
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_ios.gif" height="400" />
-  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo_android.gif" height="400" />
+  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo.gif" height="400" />
 </p>
 
 ## Usage
@@ -41,86 +40,26 @@ _Please, star this repo to let me know that this features is important for you._
 import ImageView from 'react-native-image-view';
 
 <ImageView
-  source={{ /* standard Image source object */ }}
-  imageWidth={/* number, fullsize image width */}
-  imageHeight={/* number, fullsize image height */}
-  title={/* string, optional */}
-  isVisible={/* boolean */}
+  source={{uri: 'https://example.com/image.jpg'}}
+  isVisible={this.state.isVisible}
+
+  imageWidth={1000}
+  imageHeight={800}
 />
 ```
 
-## Example
-```jsx
-import React, { Component } from 'react';
-import {View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+#### [See](https://github.com/antonKalinin/react-native-image-view/blob/master/example/App.js) example for better understanding
 
-import ImageView from 'react-native-image-view';
-
-const images = [
-  {
-    url: 'https://farm1.static.flickr.com/256/31719945500_f4c3cac93c_b.jpg',
-    title: 'Sørvágsvatn is the largest lake in the Faroe Islands',
-    width: 1000,
-    height: 667,
-  },
-];
-
-export default class App extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      currentImage: {
-        url: '',
-        width: 0,
-        height: 0,
-      },
-      isImageViewVisible: false,
-    };
-  }
-
-  render() {
-    const { isImageViewVisible, currentImage } = this.state;
-
-    return (
-      <View style={styles.container}>
-        <View>
-          {images.map(image => (
-            <TouchableOpacity
-              key={image.url}
-              onPress={() => {
-                this.setState({
-                  isImageViewVisible: true,
-                  currentImage: image,
-                });
-              }}>
-              <Image
-                style={{ width: 200, height: 200 }}
-                source={{ uri: image.url }}
-                resizeMode="center"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-        <ImageView
-          source={{ uri: currentImage.url }}
-          imageWidth={currentImage.width}
-          imageHeight={currentImage.height}
-          title={currentImage.title}
-          isVisible={isImageViewVisible}
-        />
-      </View>
-    );
-  }
+## Props
+```js
+{
+  title: ?string, //  optional, title under the image
+  isVisible: boolean, // if modal is shown or not
+  source: any, // Image source object
+  imageWidth: ?number, // optional, but recomended, fullsize image width
+  imageHeight: ?number, // optional, but recomended, fullsize image height
+  animationType: 'none' | 'fade' | 'scale', // optional, how modal will be shown
+  onClose: () => {}, // function called on modal closed
+  renderFooter: ({title: string, source: any}): ReactElement => {}, // function that returns custom footer element
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ecf0f1',
-  },
-});
-
 ```

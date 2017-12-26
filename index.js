@@ -35,6 +35,7 @@ type PropsType = {
     imageHeight: number,
     animationType: 'none' | 'fade' | 'scale',
     onClose: () => {},
+    renderFooter: () => {},
 };
 
 const HEADER_HEIGHT = 60;
@@ -59,7 +60,11 @@ const styles = StyleSheet.create({
         bottom: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         left: 0,
         zIndex: 100,
+    },
+    footer_original: {
+        minHeight: 50,
         width: screenWidth,
+        justifyContent: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
         paddingHorizontal: 10,
         paddingVertical: 5,
@@ -250,7 +255,7 @@ export default class ImageView extends Component<PropsType> {
 
         if (nextScale < imageMinScale) {
             nextScale = imageMinScale;
-        } else if (nextScale > SCALE_MAXIMUM) {flex: 1,
+        } else if (nextScale > SCALE_MAXIMUM) {
             nextScale = SCALE_MAXIMUM;
         }
 
@@ -336,7 +341,7 @@ export default class ImageView extends Component<PropsType> {
 
         // Close modal with animation
         // when minimum scale and high vertical gesture speed
-        if (scale === imageMinScale && Math.abs(vy) > CLOSE_SPEED) {
+        if (scale === imageMinScale && Math.abs(vy) >= CLOSE_SPEED) {
             Animated
                 .timing(this.traslateValue.y, {
                     toValue: nextOffsetY + (200 * vy),
@@ -448,7 +453,7 @@ export default class ImageView extends Component<PropsType> {
     }
 
     render() {
-        const {animationType} = this.props;
+        const {animationType, renderFooter} = this.props;
         const {
             modalAnimation,
             isVisible,
@@ -525,14 +530,23 @@ export default class ImageView extends Component<PropsType> {
                         {...this.panResponder.panHandlers}
                     />
                 </View>
-                {title &&
+                {(renderFooter || title) &&
                     <Animated.View
-                        style={[styles.footer, {transform: footerTranslate}]}
+                        style={[
+                            styles.footer,
+                            !renderFooter && styles.footer_original,
+                            {transform: footerTranslate},
+                        ]}
                         onLayout={(event) => {
                             this.footerHeight = event.nativeEvent.layout.height;
                         }}
                     >
-                        <Text style={styles.title}>{title}</Text>
+                        {typeof renderFooter === 'function' &&
+                            renderFooter({title, source})
+                        }
+                        {title && !renderFooter &&
+                            <Text style={styles.title}>{title}</Text>
+                        }
                     </Animated.View>
                 }
             </Animated.Modal>
