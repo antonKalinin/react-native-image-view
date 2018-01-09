@@ -154,6 +154,8 @@ export default class ImageView extends Component<PropsType> {
         this.footerTranslateValue = new Animated.ValueXY();
         this.numberOfTouches = 0;
         this.doubleTapTimer = null;
+
+        this.togglePanels = this.togglePanels.bind(this);
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
@@ -197,7 +199,7 @@ export default class ImageView extends Component<PropsType> {
         }
     }
 
-    async onGestureStart(event, gestureState) {
+    async onGestureStart(event: EventType, gestureState: GestureState) {
         this.gestureInProgress = gestureState.stateID;
         this.initialTouches = event.touches;
         this.numberOfTouches = event.touches.length;
@@ -216,15 +218,6 @@ export default class ImageView extends Component<PropsType> {
 
         const nextOffsetX = offsetX + dx;
         const nextOffsetY = offsetY + dy;
-
-        // TODO: taught drag out of limit bounds
-
-        // const scaleDeltaX = ((scale * imageWidth) - imageWidth) / 2;
-        // const scaleDeltaY = ((scale * imageHeight) - imageHeight) / 2;
-
-        // if (nextOffsetX > scaleDeltaX || nextOffsetX < screenWidth - imageWidth - scaleDeltaX) {
-        //     nextOffsetX = offsetX + (dx * 0.35);
-        // }
 
         // add image current offset
 
@@ -403,8 +396,9 @@ export default class ImageView extends Component<PropsType> {
             onPanResponderTerminationRequest: () => {
                 this.gestureInProgress = null;
             },
-            onPanResponderTerminate: (event: EventType, gestureState: GestureState) =>
-                this.onGestureRelease(event.nativeEvent, gestureState),
+            onPanResponderTerminate: (event: EventType, gestureState: GestureState) => {
+                this.onGestureRelease(event.nativeEvent, gestureState);
+            },
         });
     }
 
@@ -495,6 +489,8 @@ export default class ImageView extends Component<PropsType> {
 
         return (
             <Animated.Modal
+                onStartShouldSetResponder={() => true}
+                onResponderRelease={this.togglePanels}
                 visible={isVisible}
                 style={[
                     styles.modal,
