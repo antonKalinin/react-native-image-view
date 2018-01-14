@@ -38,7 +38,10 @@ type PropsType = {
     renderFooter: () => {},
 };
 
+const CLOSE_SPEED = 1.1;
 const HEADER_HEIGHT = 60;
+const SCALE_MAXIMUM = 5;
+const SCALE_MULTIPLIER = 1.2;
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 const styles = StyleSheet.create({
@@ -89,10 +92,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-
-const CLOSE_SPEED = 1.1;
-const SCALE_MAXIMUM = 5;
-const SCALE_MULTIPLIER = 1.2;
 
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
@@ -154,8 +153,6 @@ export default class ImageView extends Component<PropsType> {
         this.footerTranslateValue = new Animated.ValueXY();
         this.numberOfTouches = 0;
         this.doubleTapTimer = null;
-
-        this.togglePanels = this.togglePanels.bind(this);
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
@@ -174,8 +171,6 @@ export default class ImageView extends Component<PropsType> {
                 Animated.timing(this.state.modalAnimation, {
                     duration: 400,
                     toValue: 1,
-                }, {
-                    useNativeDriver: true,
                 }).start();
             }
 
@@ -225,11 +220,15 @@ export default class ImageView extends Component<PropsType> {
             this.traslateValue.x.setValue(nextOffsetX);
         }
 
-        this.traslateValue.y.setValue(nextOffsetY);
+        // Do not allow to move image verticaly untill it fits to screen
+        if (scale * imageHeight > screenHeight) {
+            this.traslateValue.y.setValue(nextOffsetY);
+        }
 
         if (scale === imageMinScale && (imageHeight * imageMinScale) < screenHeight) {
             const backgroundOpacity = Math.abs(dy * 0.002);
 
+            this.traslateValue.y.setValue(nextOffsetY);
             this.backgroundOpacity.setValue(backgroundOpacity > 1 ? 1 : backgroundOpacity);
         }
 
@@ -254,6 +253,7 @@ export default class ImageView extends Component<PropsType> {
 
         this.scaleValue.setValue(nextScale);
         this.numberOfTouches = event.touches.length;
+        this.togglePanels(false);
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
@@ -265,10 +265,12 @@ export default class ImageView extends Component<PropsType> {
         } = this.state;
 
         let {_value: scale} = this.scaleValue;
+        const {touches} = event || {};
         const {_value: backgroundOpacity} = this.backgroundOpacity;
         const [offsetX, offsetY] = this.state.imageTranslate;
-        const {dx, dy, vy} = gestureState;
+        const {dx, dy, vx, vy} = gestureState;
 
+        // Calculate position of the image after gesture will be relaesed
         const getOffsetWithBounds = (axis) => {
             let nextOffset = axis === 'x' ? (offsetX + dx) : (offsetY + dy);
             const imageSize = axis === 'x' ? imageWidth : imageHeight;
@@ -284,9 +286,15 @@ export default class ImageView extends Component<PropsType> {
 
                 Animated.parallel([
                     backgroundOpacity > 0
-                        ? Animated.timing(this.backgroundOpacity, {toValue: 0, duration: 100})
+                        ? Animated.timing(this.backgroundOpacity, {
+                            toValue: 0,
+                            duration: 100,
+                        })
                         : null,
-                    Animated.timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100}),
+                    Animated.timing(this.traslateValue[axis], {
+                        toValue: nextOffset,
+                        duration: 100,
+                    }),
                 ].filter(Boolean)).start();
 
                 return nextOffset;
@@ -304,7 +312,10 @@ export default class ImageView extends Component<PropsType> {
             }
 
             Animated
-                .timing(this.traslateValue[axis], {toValue: nextOffset, duration: 100})
+                .timing(this.traslateValue[axis], {
+                    toValue: nextOffset,
+                    duration: 100,
+                })
                 .start();
 
             return nextOffset;
@@ -319,14 +330,23 @@ export default class ImageView extends Component<PropsType> {
                 scale = scale === imageMinScale ? scale * 3 : imageMinScale;
 
                 Animated
-                    .timing(this.scaleValue, {toValue: scale, duration: 300})
+                    .timing(this.scaleValue, {
+                        toValue: scale,
+                        duration: 300,
+                    })
                     .start();
+
+                this.togglePanels(scale === imageMinScale);
             } else {
                 this.doubleTapTimer = setTimeout(() => {
                     this.togglePanels();
                     this.doubleTapTimer = null;
-                }, 250);
+                }, 200);
             }
+        }
+
+        if (imageScale > scale && scale === imageMinScale) {
+            this.togglePanels(true);
         }
 
         const nextOffsetX = getOffsetWithBounds('x');
@@ -337,11 +357,30 @@ export default class ImageView extends Component<PropsType> {
         if (scale === imageMinScale && Math.abs(vy) >= CLOSE_SPEED) {
             Animated
                 .timing(this.traslateValue.y, {
-                    toValue: nextOffsetY + (200 * vy),
+                    toValue: nextOffsetY + (400 * vy),
                     duration: 150,
                 })
                 .start(() => { this.close(); });
         }
+
+        // TODO: inertial scroll
+        /*if (scale !== imageMinScale) {
+            nextOffsetX += (300 * vx * 0.8);
+
+            Animated
+                .timing(this.traslateValue.x, {
+                    toValue: nextOffsetX,
+                    duration: 500,
+                })
+                .start(() => {
+                    this.setState({
+                        imageScale: scale,
+                        imageTranslate: [nextOffsetX, nextOffsetY],
+                    });
+                });
+        } else {
+            
+        }*/
 
         this.setState({
             imageScale: scale,
@@ -402,19 +441,23 @@ export default class ImageView extends Component<PropsType> {
         });
     }
 
-    togglePanels() {
-        const {isPanelsVisible} = this.state;
+    togglePanels(isVisible) {
+        const isPanelsVisible = typeof isVisible !== 'undefined'
+            ? isVisible
+            : !this.state.isPanelsVisible;
         // toggle footer and header
-        this.setState({isPanelsVisible: !isPanelsVisible});
+        this.setState({isPanelsVisible});
 
         Animated.timing(this.headerTranslateValue.y, {
-            toValue: isPanelsVisible ? -HEADER_HEIGHT : 0,
+            toValue: !isPanelsVisible ? -HEADER_HEIGHT : 0,
             duration: 200,
+            useNativeDriver: true,
         }).start();
 
         Animated.timing(this.footerTranslateValue.y, {
-            toValue: isPanelsVisible ? this.footerHeight : 0,
+            toValue: !isPanelsVisible ? this.footerHeight : 0,
             duration: 200,
+            useNativeDriver: true,
         }).start();
     }
 
@@ -490,7 +533,7 @@ export default class ImageView extends Component<PropsType> {
         return (
             <Animated.Modal
                 onStartShouldSetResponder={() => true}
-                onResponderRelease={this.togglePanels}
+                onResponderRelease={() => this.togglePanels()}
                 visible={isVisible}
                 style={[
                     styles.modal,
