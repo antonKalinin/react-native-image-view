@@ -5,6 +5,7 @@ import {
     Text,
     View,
     Image,
+    Easing,
     Animated,
     Platform,
     StatusBar,
@@ -12,6 +13,7 @@ import {
     Dimensions,
     PanResponder,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 
 import Modal from 'react-native-root-modal';
@@ -90,6 +92,11 @@ const styles = StyleSheet.create({
     },
     image: {
         flex: 1,
+    },
+    loading: {
+        position: 'absolute',
+        top: (screenHeight / 2) - 20,
+        alignSelf: 'center',
     },
 });
 
@@ -256,6 +263,7 @@ export default class ImageView extends Component<PropsType> {
         this.togglePanels(false);
     }
 
+    // TODO Rewrite more clearly
     onGestureRelease(event: EventType, gestureState: GestureState) {
         const {
             imageScale,
@@ -264,6 +272,7 @@ export default class ImageView extends Component<PropsType> {
             imageMinScale,
         } = this.state;
 
+        let limit = null;
         let {_value: scale} = this.scaleValue;
         const {touches} = event || {};
         const {_value: backgroundOpacity} = this.backgroundOpacity;
@@ -275,6 +284,8 @@ export default class ImageView extends Component<PropsType> {
             let nextOffset = axis === 'x' ? (offsetX + dx) : (offsetY + dy);
             const imageSize = axis === 'x' ? imageWidth : imageHeight;
             const screenSize = axis === 'x' ? screenWidth : screenHeight;
+            const leftLimit = ((scale * imageSize) - imageSize) / 2;
+            const rightLimit = screenSize - imageSize - leftLimit;
 
             // Less than the screen
             if (screenSize > scale * imageSize) {
@@ -297,11 +308,8 @@ export default class ImageView extends Component<PropsType> {
                     }),
                 ].filter(Boolean)).start();
 
-                return nextOffset;
+                return {nextOffset, leftLimit, rightLimit};
             }
-
-            const leftLimit = ((scale * imageSize) - imageSize) / 2;
-            const rightLimit = screenSize - imageSize - leftLimit;
 
             if (nextOffset > leftLimit) {
                 nextOffset = leftLimit;
@@ -318,7 +326,7 @@ export default class ImageView extends Component<PropsType> {
                 })
                 .start();
 
-            return nextOffset;
+            return {nextOffset, leftLimit, rightLimit};
         };
 
         // Position haven't changed, so it just tap
@@ -349,8 +357,8 @@ export default class ImageView extends Component<PropsType> {
             this.togglePanels(true);
         }
 
-        const nextOffsetX = getOffsetWithBounds('x');
-        const nextOffsetY = getOffsetWithBounds('y');
+        let {nextOffset: nextOffsetX, leftLimit, rightLimit} = getOffsetWithBounds('x');
+        const {nextOffset: nextOffsetY} = getOffsetWithBounds('y');
 
         // Close modal with animation
         // when minimum scale and high vertical gesture speed
@@ -363,14 +371,23 @@ export default class ImageView extends Component<PropsType> {
                 .start(() => { this.close(); });
         }
 
-        // TODO: inertial scroll
+        // Momentum scroll
         /*if (scale !== imageMinScale) {
-            nextOffsetX += (300 * vx * 0.8);
+            nextOffsetX += (500 * vx);
+
+            if (nextOffsetX > leftLimit) {
+                nextOffsetX = leftLimit;
+            }
+
+            if (nextOffsetX < rightLimit) {
+                nextOffsetX = rightLimit;
+            }
 
             Animated
                 .timing(this.traslateValue.x, {
                     toValue: nextOffsetX,
-                    duration: 500,
+                    duration: 800 * Math.abs(vx),
+                    easing: Easing.out(Easing.quad),
                 })
                 .start(() => {
                     this.setState({
@@ -379,7 +396,10 @@ export default class ImageView extends Component<PropsType> {
                     });
                 });
         } else {
-            
+            this.setState({
+                imageScale: scale,
+                imageTranslate: [nextOffsetX, nextOffsetY],
+            });
         }*/
 
         this.setState({
@@ -568,6 +588,9 @@ export default class ImageView extends Component<PropsType> {
                         onLoad={() => this.onImageLoaded()}
                         {...this.panResponder.panHandlers}
                     />
+                    {!isImageLoaded &&
+                        <ActivityIndicator style={styles.loading} />
+                    }
                 </View>
                 {(renderFooter || title) &&
                     <Animated.View
