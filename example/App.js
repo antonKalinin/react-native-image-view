@@ -14,19 +14,23 @@ const {width} = Dimensions.get('window');
 
 const images = [
     {
-        url: 'https://avatars.mds.yandex.net/get-pdb/49816/d9152cc6-bf48-4e44-b2d5-de73b2e94454/s800',
+        source: {
+            uri: 'https://avatars.mds.yandex.net/get-pdb/49816/d9152cc6-bf48-4e44-b2d5-de73b2e94454/s800',
+        },
         title: 'London',
         width: 800,
         height: 500,
     },
     {
-        url: 'https://1x.com/images/user/a03d49a110757fcf8550b7881988f9be-hd4.jpg',
+        source: require('./assets/spb.jpg'),
         title: 'St-Petersburg',
         width: 1200,
         height: 800,
     },
     {
-        url: 'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
+        source: {
+            uri: 'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
+        },
         title: 'Paris',
         width: 806,
         height: 720,
@@ -39,7 +43,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#000',
     },
     footer: {
         width,
@@ -75,7 +79,7 @@ export default class App extends Component {
             },
             isImageViewVisible: false,
             likes: images.reduce((acc, image) => {
-                acc[image.url] = 0;
+                acc[image.title] = 0;
 
                 return acc;
             }, {}),
@@ -84,18 +88,19 @@ export default class App extends Component {
 
     renderFooter({title, source}) {
         const {likes} = this.state;
+
         return (
             <View style={styles.footer}>
                 <Text style={styles.footerText}>{title}</Text>
                 <TouchableOpacity
                     style={styles.footerButton}
                     onPress={() => {
-                        const imageLikes = likes[source.uri] + 1;
-                        this.setState({likes: {...likes, [source.uri]: imageLikes}});
+                        const imageLikes = likes[title] + 1;
+                        this.setState({likes: {...likes, [title]: imageLikes}});
                     }}
                 >
                     <Text style={styles.footerText}>♥</Text>
-                    <Text style={[styles.footerText, {marginLeft: 7}]}>{likes[source.uri]}</Text>
+                    <Text style={[styles.footerText, {marginLeft: 7}]}>{likes[title]}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -109,7 +114,7 @@ export default class App extends Component {
                 <View>
                     {images.map(image => (
                         <TouchableOpacity
-                            key={image.url}
+                            key={image.title}
                             onPress={() => {
                                 this.setState({
                                     isImageViewVisible: true,
@@ -119,20 +124,20 @@ export default class App extends Component {
                         >
                             <Image
                                 style={{width, height: 200}}
-                                source={{uri: image.url}}
-                                resizeMode='center'
+                                source={image.source}
+                                resizeMode='cover'
                             />
                         </TouchableOpacity>
                     ))}
                 </View>
                 <ImageView
-                    source={{uri: currentImage.url}}
+                    source={currentImage.source}
                     animationType='fade'
                     imageWidth={currentImage.width}
                     imageHeight={currentImage.height}
                     title={currentImage.title}
                     isVisible={isImageViewVisible}
-                    renderFooter={props => this.renderFooter(props)}
+                    renderFooter={() => this.renderFooter(currentImage)}
                 />
             </View>
         );

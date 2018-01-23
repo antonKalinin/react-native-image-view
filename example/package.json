@@ -5,7 +5,7 @@
     "expo": "^23.0.0",
     "react": "16.0.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-23.0.0.tar.gz",
-    "react-native-image-view": "latest"
+    "react-native-image-view": "1.2.4"
   },
   "devDependencies": {
     "babel-eslint": "^8.0.1",

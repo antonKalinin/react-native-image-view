@@ -1,5 +1,38 @@
 // @flow
 
+// Momentum scroll
+/*
+if (scale !== imageMinScale) {
+    nextOffsetX += (500 * vx);
+
+    if (nextOffsetX > leftLimit) {
+        nextOffsetX = leftLimit;
+    }
+
+    if (nextOffsetX < rightLimit) {
+        nextOffsetX = rightLimit;
+    }
+
+    Animated
+        .timing(this.traslateValue.x, {
+            toValue: nextOffsetX,
+            duration: 800 * Math.abs(vx),
+            easing: Easing.out(Easing.quad),
+        })
+        .start(() => {
+            this.setState({
+                imageScale: scale,
+                imageTranslate: [nextOffsetX, nextOffsetY],
+            });
+        });
+} else {
+    this.setState({
+        imageScale: scale,
+        imageTranslate: [nextOffsetX, nextOffsetY],
+    });
+}
+*/
+
 import React, {Component} from 'react';
 import {
     Text,
@@ -151,6 +184,7 @@ export default class ImageView extends Component<PropsType> {
 
         this.generatePanHandlers();
 
+        this.footerHeight = 0;
         this.initialTouches = [];
         this.scrollValue = new Animated.Value(0);
         this.scaleValue = new Animated.Value(1);
@@ -214,7 +248,7 @@ export default class ImageView extends Component<PropsType> {
 
         const {touches} = event;
         const {dx, dy} = gestureState;
-        const {imageWidth, imageHeight, imageMinScale} = this.state;
+        const {imageHeight, imageMinScale} = this.state;
         const scale = this.state.imageScale;
         const [offsetX, offsetY] = this.state.imageTranslate;
 
@@ -263,7 +297,27 @@ export default class ImageView extends Component<PropsType> {
         this.togglePanels(false);
     }
 
-    // TODO Rewrite more clearly
+    /**
+     * TODO Rewrite more clearly
+     *
+     * Requirements:
+     * - if single image and image position is out of limits
+     *   => quickly return image to its place
+     *
+     * - if image collection, position is out of limits and image not scaled
+     *   => slide to next image (direction does matter)
+     *
+     * - if image (no matter collection or not) is scaled and movement was performed
+     *   => perform inertial scroll
+     *
+     * - if image (no matter collection or not) is not scaled and verival movement was perfomed
+     *   => close modal with image slide and background opacity animation
+     *
+     * - if no movement was performed
+     *   => count if it one single or double
+     *      if single => toggle panels
+     *      if double => toggle scale
+     */
     onGestureRelease(event: EventType, gestureState: GestureState) {
         const {
             imageScale,
@@ -272,12 +326,10 @@ export default class ImageView extends Component<PropsType> {
             imageMinScale,
         } = this.state;
 
-        let limit = null;
         let {_value: scale} = this.scaleValue;
-        const {touches} = event || {};
         const {_value: backgroundOpacity} = this.backgroundOpacity;
         const [offsetX, offsetY] = this.state.imageTranslate;
-        const {dx, dy, vx, vy} = gestureState;
+        const {dx, dy, vy} = gestureState;
 
         // Calculate position of the image after gesture will be relaesed
         const getOffsetWithBounds = (axis) => {
@@ -357,7 +409,7 @@ export default class ImageView extends Component<PropsType> {
             this.togglePanels(true);
         }
 
-        let {nextOffset: nextOffsetX, leftLimit, rightLimit} = getOffsetWithBounds('x');
+        const {nextOffset: nextOffsetX} = getOffsetWithBounds('x');
         const {nextOffset: nextOffsetY} = getOffsetWithBounds('y');
 
         // Close modal with animation
@@ -370,37 +422,6 @@ export default class ImageView extends Component<PropsType> {
                 })
                 .start(() => { this.close(); });
         }
-
-        // Momentum scroll
-        /*if (scale !== imageMinScale) {
-            nextOffsetX += (500 * vx);
-
-            if (nextOffsetX > leftLimit) {
-                nextOffsetX = leftLimit;
-            }
-
-            if (nextOffsetX < rightLimit) {
-                nextOffsetX = rightLimit;
-            }
-
-            Animated
-                .timing(this.traslateValue.x, {
-                    toValue: nextOffsetX,
-                    duration: 800 * Math.abs(vx),
-                    easing: Easing.out(Easing.quad),
-                })
-                .start(() => {
-                    this.setState({
-                        imageScale: scale,
-                        imageTranslate: [nextOffsetX, nextOffsetY],
-                    });
-                });
-        } else {
-            this.setState({
-                imageScale: scale,
-                imageTranslate: [nextOffsetX, nextOffsetY],
-            });
-        }*/
 
         this.setState({
             imageScale: scale,
@@ -474,11 +495,13 @@ export default class ImageView extends Component<PropsType> {
             useNativeDriver: true,
         }).start();
 
-        Animated.timing(this.footerTranslateValue.y, {
-            toValue: !isPanelsVisible ? this.footerHeight : 0,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
+        if (this.footerHeight > 0) {
+            Animated.timing(this.footerTranslateValue.y, {
+                toValue: !isPanelsVisible ? this.footerHeight : 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
     }
 
     reset() {
