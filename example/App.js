@@ -8,7 +8,8 @@ import {
     Dimensions,
 } from 'react-native';
 
-import ImageView from 'react-native-image-view';
+import ImageView from './ImageCollectionView';
+// import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
@@ -72,11 +73,7 @@ export default class App extends Component {
         super(props);
 
         this.state = {
-            currentImage: {
-                url: '',
-                width: 0,
-                height: 0,
-            },
+            imageIndex: 0,
             isImageViewVisible: false,
             likes: images.reduce((acc, image) => {
                 acc[image.title] = 0;
@@ -107,18 +104,18 @@ export default class App extends Component {
     }
 
     render() {
-        const {isImageViewVisible, currentImage} = this.state;
+        const {isImageViewVisible, imageIndex} = this.state;
 
         return (
             <View style={styles.container}>
                 <View>
-                    {images.map(image => (
+                    {images.map((image, index) => (
                         <TouchableOpacity
                             key={image.title}
                             onPress={() => {
                                 this.setState({
+                                    imageIndex: index,
                                     isImageViewVisible: true,
-                                    currentImage: image,
                                 });
                             }}
                         >
@@ -131,13 +128,10 @@ export default class App extends Component {
                     ))}
                 </View>
                 <ImageView
-                    source={currentImage.source}
+                    images={images}
+                    imageIndex={imageIndex}
                     animationType='fade'
-                    imageWidth={currentImage.width}
-                    imageHeight={currentImage.height}
-                    title={currentImage.title}
                     isVisible={isImageViewVisible}
-                    renderFooter={() => this.renderFooter(currentImage)}
                 />
             </View>
         );
