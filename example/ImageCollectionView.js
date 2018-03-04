@@ -43,10 +43,13 @@ type PropsType = {
     onClose: () => {},
 };
 
+const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
 const HEADER_HEIGHT = 60;
 const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
+const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
+
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 const styles = StyleSheet.create({
     container: {
@@ -210,6 +213,7 @@ export default class ImageCollectionView extends Component<PropsType> {
 
             this.imageScaleValue.setValue(nextScale);
             this.imageTranslateValue.setValue(nextTranslate);
+            this.modalBackgroundOpacity.setValue(0);
 
             if (nextProps.isVisible) {
                 Animated.timing(this.modalAnimation, {
@@ -263,17 +267,34 @@ export default class ImageCollectionView extends Component<PropsType> {
             this.initialTouches = event.touches;
         }
 
-        const {imageScale, imageTranslate} = this.state;
-
+        const {
+            images,
+            imageIndex,
+            imageScale,
+            imageTranslate,
+        } = this.state;
         const {touches} = event;
         const {x, y} = imageTranslate;
         const {dx, dy} = gestureState;
+        const imageInitialScale = this.getInitialScale();
+        const {height} = images[imageIndex];
 
-        if (imageScale !== this.getInitialScale()) {
+        if (imageScale !== imageInitialScale) {
             this.imageTranslateValue.x.setValue(x + dx);
         }
 
-        this.imageTranslateValue.y.setValue(y + dy);
+        // Do not allow to move image verticaly untill it fits to the screen
+        if (imageScale * height > screenHeight) {
+            this.imageTranslateValue.y.setValue(y + dy);
+        }
+
+        // if image not scaled and fits to the screen
+        if (imageScale === imageInitialScale && (height * imageInitialScale) < screenHeight) {
+            const backgroundOpacity = Math.abs(dy * BACKGROUND_OPACITY_MULTIPLIER);
+
+            this.imageTranslateValue.y.setValue(y + dy);
+            this.modalBackgroundOpacity.setValue(backgroundOpacity > 1 ? 1 : backgroundOpacity);
+        }
 
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
@@ -305,7 +326,7 @@ export default class ImageCollectionView extends Component<PropsType> {
         const {imageScale} = this.state;
 
         let {_value: scale} = this.imageScaleValue;
-        const {_value: backgroundOpacity} = this.modalBackgroundOpacity;
+        const {_value: modalBackgroundOpacity} = this.modalBackgroundOpacity;
 
         const {dx, dy, vy} = gestureState;
         const imageInitialScale = this.getInitialScale();
@@ -338,10 +359,13 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
 
         const {x, y} = this.calcultateNextTranslate(dx, dy, scale);
+        const scrollEnabled = scale === this.getInitialScale() &&
+            x === imageInitialTranslate.x &&
+            y === imageInitialTranslate.y;
 
         Animated.parallel([
-            backgroundOpacity > 0
-                ? Animated.timing(this.backgroundOpacity, {
+            modalBackgroundOpacity > 0
+                ? Animated.timing(this.modalBackgroundOpacity, {
                     toValue: 0,
                     duration: 100,
                 })
@@ -350,9 +374,15 @@ export default class ImageCollectionView extends Component<PropsType> {
             Animated.timing(this.imageTranslateValue.y, {toValue: y, duration: 100}),
         ].filter(Boolean)).start();
 
-        const scrollEnabled = scale === this.getInitialScale() &&
-            x === imageInitialTranslate.x &&
-            y === imageInitialTranslate.y;
+        // Close modal with animation if image not scaled and high vertical gesture speed
+        if (scale === imageInitialScale && Math.abs(vy) >= IMAGE_SPEED_FOR_CLOSE) {
+            Animated
+                .timing(this.imageTranslateValue.y, {
+                    toValue: y + (400 * vy),
+                    duration: 150,
+                })
+                .start(() => { this.close(); });
+        }
 
         this.setState({
             imageScale: scale,
@@ -361,7 +391,15 @@ export default class ImageCollectionView extends Component<PropsType> {
         });
     }
 
-    getInitialScale(index: number) {
+    onImageLoaded(index: number) {
+        const {images} = this.state;
+
+        images[index] = {...images[index], loaded: true};
+
+        this.setState({images});
+    }
+
+    getInitialScale(index: number): number {
         const imageIndex = index !== undefined
             ? index
             : this.state.imageIndex;
@@ -377,7 +415,7 @@ export default class ImageCollectionView extends Component<PropsType> {
         return this.imageInitialParams[imageIndex].translate;
     }
 
-    getImageStyle(image: ImageType, index: number) {
+    getImageStyle(image: ImageType, index: number): {width: number, height: number, transform: any } {
         const {imageIndex} = this.state;
 
         const {width, height} = image;
@@ -478,25 +516,28 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
-    renderImages(images) {
-        return images.map((image, index) => (
+    renderImages(images: Array<ImageType>) {
+        return images.map((image: ImageType, index: number) => (
             <View
                 key={`image_${index}`}
                 style={styles.imageContainer}
-                onStartShouldSetResponder={() => true}
+                onStartShouldSetResponder={(): boolean => true}
             >
                 <Animated.Image
                     resizeMode='cover'
                     source={image.source}
                     style={this.getImageStyle(image, index)}
+                    onLoad={() => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                 />
+                {!image.loaded &&
+                    <ActivityIndicator style={styles.loading} />
+                }
             </View>
         ));
     }
 
     render() {
-        // console.log('RENDER', ++renderCounter);
         const {animation} = this.props;
         const {
             images,
@@ -505,8 +546,11 @@ export default class ImageCollectionView extends Component<PropsType> {
             scrollEnabled,
         } = this.state;
 
-        const backgroundColor = 'rgba(0, 0, 0, 0.9)';
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
+        const backgroundColor = this.modalBackgroundOpacity.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['rgba(0, 0, 0, 0.9)', 'rgba(0, 0, 0, 0.2)'],
+        });
 
         return (
             <Animated.Modal
