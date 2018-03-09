@@ -4,7 +4,7 @@
     "description": "React Native modal image view with pinch zoom",
     "slug": "react-native-image-view",
     "privacy": "public",
-    "sdkVersion": "23.0.0",
+    "sdkVersion": "25.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "primaryColor": "#cccccc",

@@ -6,7 +6,7 @@ import {
     View,
     Image,
     Animated,
-    ScrollView,
+    FlatList,
     StyleSheet,
     Dimensions,
     PanResponder,
@@ -89,6 +89,12 @@ const styles = StyleSheet.create({
         color: '#FFF',
         textAlign: 'center',
     },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        zIndex: 100,
+    },
 });
 
 const generatePanHandlers = (onStart, onMove, onRelease): any => PanResponder.create({
@@ -106,6 +112,14 @@ const generatePanHandlers = (onStart, onMove, onRelease): any => PanResponder.cr
 const getScale = (currentDistance: number, initialDistance: number): number =>
     (currentDistance / initialDistance) * SCALE_MULTIPLIER;
 const pow2abs = (a: number, b: number): number => Math.pow(Math.abs(a - b), 2);
+
+function getItemLayout(data, index): any {
+    return {
+        length: screenWidth,
+        offset: screenWidth * index,
+        index,
+    };
+}
 
 function getDistance(touches: Array<TouchType>): number {
     const [a, b] = touches;
@@ -175,7 +189,7 @@ export default class ImageCollectionView extends Component<PropsType> {
 
             scrollEnabled: true,
             panelsVisible: true,
-            isScrollViewRerendered: false,
+            isFlatListRerendered: false,
         };
 
         this.footerHeight = 0;
@@ -201,8 +215,9 @@ export default class ImageCollectionView extends Component<PropsType> {
         );
 
         this.onNextImage = this.onNextImage.bind(this);
+        this.renderImage = this.renderImage.bind(this);
         this.togglePanels = this.togglePanels.bind(this);
-        this.onScrollViewRender = this.onScrollViewRender.bind(this);
+        this.onFlatListRender = this.onFlatListRender.bind(this);
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
@@ -223,7 +238,7 @@ export default class ImageCollectionView extends Component<PropsType> {
                 imageIndex: nextProps.imageIndex || 0,
                 imageScale: nextScale,
                 imageTranslate: nextTranslate,
-                isScrollViewRerendered: false,
+                isFlatListRerendered: false,
             });
 
             this.imageScaleValue.setValue(nextScale);
@@ -239,12 +254,17 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
-    onScrollViewRender(scrollView: Element) {
-        const {imageIndex, isScrollViewRerendered} = this.state;
+    onFlatListRender(flatList: Element) {
+        const {imageIndex, isFlatListRerendered} = this.state;
 
-        if (scrollView && !isScrollViewRerendered) {
-            this.setState({isScrollViewRerendered: true});
-            scrollView.scrollTo({x: imageIndex * screenWidth, animated: false});
+        if (flatList && !isFlatListRerendered) {
+            this.setState({isFlatListRerendered: true});
+
+            // Fix for android https://github.com/facebook/react-native/issues/13202
+            const nextTick = new Promise((resolve) => setTimeout(resolve, 0));
+            nextTick.then(() => {
+                flatList.scrollToIndex({index: imageIndex, animated: false});
+            });
         }
     }
 
@@ -535,10 +555,9 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
-    renderImages(images: Array<ImageType>): JSX.Element {
-        return images.map((image: ImageType, index: number): JSX.Element => (
+    renderImage({item: image, index}): JSX.Element {
+        return (
             <View
-                key={`image_${index}`}
                 style={styles.imageContainer}
                 onStartShouldSetResponder={(): boolean => true}
             >
@@ -553,7 +572,7 @@ export default class ImageCollectionView extends Component<PropsType> {
                     <ActivityIndicator style={styles.loading} />
                 }
             </View>
-        ));
+        );
     }
 
     render(): JSX.Element {
@@ -591,18 +610,20 @@ export default class ImageCollectionView extends Component<PropsType> {
                         <Text style={styles.closeButton__text}>×</Text>
                     </TouchableOpacity>
                 </Animated.View>
-                <ScrollView
+                <FlatList
                     horizontal
                     pagingEnabled
+                    data={images}
                     scrollEnabled={scrollEnabled}
                     scrollEventThrottle={16}
                     style={styles.container}
-                    ref={this.onScrollViewRender}
+                    ref={this.onFlatListRender}
+                    renderSeparator={() => null}
+                    keyExtractor={(image: ImageType): number => images.indexOf(image)}
                     onScroll={this.onNextImage}
-                    onResponderRelease={() => {console.log('PRESS')}}
-                >
-                    {this.renderImages(images)}
-                </ScrollView>
+                    renderItem={this.renderImage}
+                    getItemLayout={getItemLayout}
+                />
                 {renderFooter &&
                     <Animated.View
                         style={[
