@@ -5,7 +5,6 @@ import {
     Text,
     View,
     Image,
-    Easing,
     Animated,
     ScrollView,
     StyleSheet,
@@ -35,12 +34,18 @@ type ImageType = {
     title: ?string,
 };
 
+type TranslateType = {
+    x: number,
+    y: number,
+};
+
 type PropsType = {
     images: Array<ImageType>,
     imageIndex: number,
     isVisible: boolean,
     animation: 'none' | 'fade',
     onClose: () => {},
+    renderFooter: () => {},
 };
 
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
@@ -86,16 +91,16 @@ const styles = StyleSheet.create({
     },
 });
 
-const generatePanHandlers = (onStart, onMove, onRelease) => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onStartShouldSetPanResponderCapture: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponderCapture: () => true,
+const generatePanHandlers = (onStart, onMove, onRelease): any => PanResponder.create({
+    onStartShouldSetPanResponder: (): boolean => true,
+    onStartShouldSetPanResponderCapture: (): boolean => true,
+    onMoveShouldSetPanResponder: (): boolean => true,
+    onMoveShouldSetPanResponderCapture: (): boolean => true,
     onPanResponderGrant: onStart,
     onPanResponderMove: onMove,
     onPanResponderRelease: onRelease,
     onPanResponderTerminate: onRelease,
-    onPanResponderTerminationRequest: () => {},
+    onPanResponderTerminationRequest: (): void => {},
 });
 
 const getScale = (currentDistance: number, initialDistance: number): number =>
@@ -127,7 +132,7 @@ function calculateInitialScale(imageWidth: number, imageHeight: number): number 
     return 1;
 }
 
-function calculateInitalTranslate(imageWidth: number, imageHeight: number): {x: number, y: number} {
+function calculateInitalTranslate(imageWidth: number, imageHeight: number): TranslateType {
     const getTranslate = (axis: string): number => {
         const imageSize = axis === 'x' ? imageWidth : imageHeight;
         const screenSize = axis === 'x' ? screenWidth : screenHeight;
@@ -145,7 +150,10 @@ function calculateInitalTranslate(imageWidth: number, imageHeight: number): {x: 
     };
 }
 
-const getInitalParams = ({width, height}) => ({
+const getInitalParams = ({width, height}: {width: number, height: number}): {
+    scale: number,
+    translate: TranslateType
+} => ({
     scale: calculateInitialScale(width, height),
     translate: calculateInitalTranslate(width, height),
 });
@@ -170,6 +178,7 @@ export default class ImageCollectionView extends Component<PropsType> {
             isScrollViewRerendered: false,
         };
 
+        this.footerHeight = 0;
         this.initialTouches = [];
         this.currentTouchesNum = 0;
         this.doubleTapTimer = null;
@@ -183,12 +192,16 @@ export default class ImageCollectionView extends Component<PropsType> {
         this.imageTranslateValue = new Animated.ValueXY(this.getInitialTranslate());
 
         this.panResponder = generatePanHandlers(
-            (event, gestureState) => this.onGestureStart(event.nativeEvent, gestureState),
-            (event, gestureState) => this.onGestureMove(event.nativeEvent, gestureState),
-            (event, gestureState) => this.onGestureRelease(event.nativeEvent, gestureState)
+            (event: EventType, gestureState: GestureState): void =>
+                this.onGestureStart(event.nativeEvent, gestureState),
+            (event: EventType, gestureState: GestureState): void =>
+                this.onGestureMove(event.nativeEvent, gestureState),
+            (event: EventType, gestureState: GestureState): void =>
+                this.onGestureRelease(event.nativeEvent, gestureState)
         );
 
         this.onNextImage = this.onNextImage.bind(this);
+        this.togglePanels = this.togglePanels.bind(this);
         this.onScrollViewRender = this.onScrollViewRender.bind(this);
     }
 
@@ -199,12 +212,14 @@ export default class ImageCollectionView extends Component<PropsType> {
         } = this.state;
 
         if (typeof nextProps.isVisible !== 'undefined' && nextProps.isVisible !== isVisible) {
-            const {width, height} = images[nextProps.imageIndex] || {};
+            const nextImages = nextProps.images || images;
+            const {width, height} = nextImages[nextProps.imageIndex] || {};
             const nextScale = calculateInitialScale(width, height);
             const nextTranslate = calculateInitalTranslate(width, height);
 
             this.setState({
                 isVisible: nextProps.isVisible,
+                images: nextImages,
                 imageIndex: nextProps.imageIndex || 0,
                 imageScale: nextScale,
                 imageTranslate: nextTranslate,
@@ -224,7 +239,7 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
-    onScrollViewRender(scrollView) {
+    onScrollViewRender(scrollView: Element) {
         const {imageIndex, isScrollViewRerendered} = this.state;
 
         if (scrollView && !isScrollViewRerendered) {
@@ -260,7 +275,8 @@ export default class ImageCollectionView extends Component<PropsType> {
     }
 
     /**
-     * If image is moved from its original position then disable scroll (for ScrollView)
+     * If image is moved from its original position
+     * then disable scroll (for ScrollView)
      */
     onGestureMove(event: EventType, gestureState: GestureState) {
         if (this.currentTouchesNum === 1 && event.touches.length === 2) {
@@ -312,8 +328,8 @@ export default class ImageCollectionView extends Component<PropsType> {
 
         let nextScale = getScale(currentDistance, initialDistance) * imageScale;
 
-        if (nextScale < this.getInitialScale()) {
-            nextScale = this.getInitialScale();
+        if (nextScale < imageInitialScale) {
+            nextScale = imageInitialScale;
         } else if (nextScale > SCALE_MAXIMUM) {
             nextScale = SCALE_MAXIMUM;
         }
@@ -407,7 +423,7 @@ export default class ImageCollectionView extends Component<PropsType> {
         return this.imageInitialParams[imageIndex].scale;
     }
 
-    getInitialTranslate(index: number) {
+    getInitialTranslate(index: number): TranslateType {
         const imageIndex = index !== undefined
             ? index
             : this.state.imageIndex;
@@ -415,7 +431,10 @@ export default class ImageCollectionView extends Component<PropsType> {
         return this.imageInitialParams[imageIndex].translate;
     }
 
-    getImageStyle(image: ImageType, index: number): {width: number, height: number, transform: any } {
+    getImageStyle(
+        image: ImageType,
+        index: number
+    ): {width: number, height: number, transform: any } {
         const {imageIndex} = this.state;
 
         const {width, height} = image;
@@ -516,8 +535,8 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
-    renderImages(images: Array<ImageType>) {
-        return images.map((image: ImageType, index: number) => (
+    renderImages(images: Array<ImageType>): JSX.Element {
+        return images.map((image: ImageType, index: number): JSX.Element => (
             <View
                 key={`image_${index}`}
                 style={styles.imageContainer}
@@ -527,7 +546,7 @@ export default class ImageCollectionView extends Component<PropsType> {
                     resizeMode='cover'
                     source={image.source}
                     style={this.getImageStyle(image, index)}
-                    onLoad={() => this.onImageLoaded(index)}
+                    onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                 />
                 {!image.loaded &&
@@ -537,16 +556,17 @@ export default class ImageCollectionView extends Component<PropsType> {
         ));
     }
 
-    render() {
-        const {animation} = this.props;
+    render(): JSX.Element {
+        const {animation, renderFooter} = this.props;
         const {
             images,
-
+            imageIndex,
             isVisible,
             scrollEnabled,
         } = this.state;
 
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
+        const footerTranslate = this.footerTranslateValue.getTranslateTransform();
         const backgroundColor = this.modalBackgroundOpacity.interpolate({
             inputRange: [0, 1],
             outputRange: ['rgba(0, 0, 0, 0.9)', 'rgba(0, 0, 0, 0.2)'],
@@ -579,9 +599,25 @@ export default class ImageCollectionView extends Component<PropsType> {
                     style={styles.container}
                     ref={this.onScrollViewRender}
                     onScroll={this.onNextImage}
+                    onResponderRelease={() => {console.log('PRESS')}}
                 >
                     {this.renderImages(images)}
                 </ScrollView>
+                {renderFooter &&
+                    <Animated.View
+                        style={[
+                            styles.footer,
+                            {transform: footerTranslate},
+                        ]}
+                        onLayout={(event: Event) => {
+                            this.footerHeight = event.nativeEvent.layout.height;
+                        }}
+                    >
+                        {typeof renderFooter === 'function' &&
+                            renderFooter(images[imageIndex])
+                        }
+                    </Animated.View>
+                }
             </Animated.Modal>
         );
     }

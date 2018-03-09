@@ -81,6 +81,8 @@ export default class App extends Component {
                 return acc;
             }, {}),
         };
+
+        this.renderFooter = this.renderFooter.bind(this);
     }
 
     renderFooter({title, source}) {
@@ -132,6 +134,7 @@ export default class App extends Component {
                     imageIndex={imageIndex}
                     animationType='fade'
                     isVisible={isImageViewVisible}
+                    renderFooter={this.renderFooter}
                 />
             </View>
         );
