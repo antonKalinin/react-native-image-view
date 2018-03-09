@@ -1,8 +1,16 @@
 [![npm version](https://badge.fury.io/js/react-native-image-view.svg)](https://badge.fury.io/js/react-native-image-view)
 
-React Native modal image view with pinch zoom.
+React Native modal image view with pinch zoom and carousel.
 
 Try with expo: https://expo.io/@antonkalinin/react-native-image-view
+
+There is a problem with detecting multiple touches in standard Modal component ([issue](https://github.com/facebook/react-native/issues/14295)) that is why
+this component is using `react-native-root-modal`.
+
+#### Warning: Breaking changes since v2.0.0:
+
+- instead of prop `source` => `images`
+- no title prop for footer, please use `renderFooter` instead
 
 ## Installation
 
@@ -10,56 +18,60 @@ Try with expo: https://expo.io/@antonkalinin/react-native-image-view
 npm install --save react-native-image-view
 ```
 
-### Reasons
-
-The functionality of this component could be done by placing ScrollView in Modal.
-Unfortunately ScrollView supports zoom only in iOS. To allow same in Android this component is done.
-
-There is a problem with detecting multiple touches in standard Modal component ([issue](https://github.com/facebook/react-native/issues/14295)) that is why
-this component is using `react-native-root-modal`.
-
-
-## Features
-
-- Pinch zoom
-- Double tap to zoom
-- Slide to close
-- Custom title component
-- ~~Inertial scroll~~
-
-_Please, star this repo to let me know that this features is important for you._
-
 ## Demo
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demo.gif" height="400" />
+  <img src="https://raw.githubusercontent.com/antonKalinin/react-native-image-view/master/static/demoV2.gif" height="400" />
 </p>
 
 ## Usage
 ```jsx
 import ImageView from 'react-native-image-view';
 
-<ImageView
-  source={{uri: 'https://example.com/image.jpg'}}
-  isVisible={this.state.isVisible}
+const images = [
+    {
+        source: {
+            uri: 'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
+        },
+        title: 'Paris',
+        width: 806,
+        height: 720,
+    },
+];
 
-  imageWidth={1000}
-  imageHeight={800}
+<ImageView
+    images={images}
+    imageIndex={0}
+    animationType='fade'
+    isVisible={this.state.isImageViewVisible}
+    renderFooter={(currentImage) => (<View><Text>My footer</Text></View>)}
 />
 ```
 
-#### [See](https://github.com/antonKalinin/react-native-image-view/blob/master/example/App.js) example for better understanding
+#### [See example for better understanding](https://github.com/antonKalinin/react-native-image-view/blob/master/example/App.js)
 
 ## Props
+
+Prop name           | Description   | Type      | Default value
+--------------------|---------------|-----------|----------------
+`images`  | Array of images to display, see below image item description | array | []
+`imageIndex` | Current index of image to display | number | 0
+`isVisible` | Is modal shown or not | boolean | false
+`onClose` | Function called on modal closed | function | none
+`renderFooter` | Function returns a footer element | function | none
+
+#### Image item:
+
 ```js
 {
-  title: ?string, //  optional, title under the image
-  isVisible: boolean, // if modal is shown or not
-  source: any, // Image source object
-  imageWidth: ?number, // optional, but recomended, fullsize image width
-  imageHeight: ?number, // optional, but recomended, fullsize image height
-  animationType: 'none' | 'fade' | 'scale', // optional, how modal will be shown
-  onClose: () => {}, // function called on modal closed
-  renderFooter: ({title: string, source: any}): ReactElement => {}, // function that returns custom footer element
+  source: any, // Image Component source object
+  width: number, // Width of full screen image
+  height: number, // Height of full screen image
+  // any other props you need to render your footer
 }
 ```
+
+### Next feature: Momentum scroll in zoom mode
+
+### License
+  [MIT](LICENSE)
