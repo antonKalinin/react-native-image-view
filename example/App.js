@@ -8,8 +8,7 @@ import {
     Dimensions,
 } from 'react-native';
 
-import ImageView from './ImageView';
-// import ImageView from 'react-native-image-view';
+import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
@@ -85,7 +84,7 @@ export default class App extends Component {
         this.renderFooter = this.renderFooter.bind(this);
     }
 
-    renderFooter({title, source}) {
+    renderFooter({title}) {
         const {likes} = this.state;
 
         return (
