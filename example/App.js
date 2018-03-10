@@ -8,14 +8,16 @@ import {
     Dimensions,
 } from 'react-native';
 
-import ImageView from 'react-native-image-view';
+import ImageView from './ImageView';
+// import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
 const images = [
     {
         source: {
-            uri: 'https://avatars.mds.yandex.net/get-pdb/49816/d9152cc6-bf48-4e44-b2d5-de73b2e94454/s800',
+            uri:
+                'https://avatars.mds.yandex.net/get-pdb/49816/d9152cc6-bf48-4e44-b2d5-de73b2e94454/s800',
         },
         title: 'London',
         width: 800,
@@ -29,7 +31,8 @@ const images = [
     },
     {
         source: {
-            uri: 'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
+            uri:
+                'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
         },
         title: 'Paris',
         width: 806,
@@ -66,7 +69,6 @@ const styles = StyleSheet.create({
     },
 });
 
-
 export default class App extends Component {
     constructor(props) {
         super(props);
@@ -98,7 +100,9 @@ export default class App extends Component {
                     }}
                 >
                     <Text style={styles.footerText}>♥</Text>
-                    <Text style={[styles.footerText, {marginLeft: 7}]}>{likes[title]}</Text>
+                    <Text style={[styles.footerText, {marginLeft: 7}]}>
+                        {likes[title]}
+                    </Text>
                 </TouchableOpacity>
             </View>
         );
@@ -123,7 +127,7 @@ export default class App extends Component {
                             <Image
                                 style={{width, height: 200}}
                                 source={image.source}
-                                resizeMode='cover'
+                                resizeMode="cover"
                             />
                         </TouchableOpacity>
                     ))}
@@ -131,7 +135,7 @@ export default class App extends Component {
                 <ImageView
                     images={images}
                     imageIndex={imageIndex}
-                    animationType='fade'
+                    animationType="fade"
                     isVisible={isImageViewVisible}
                     renderFooter={this.renderFooter}
                 />
