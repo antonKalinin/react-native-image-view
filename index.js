@@ -141,8 +141,8 @@ function getDistance(touches: Array<TouchType>): number {
 }
 
 function calculateInitialScale(
-    imageWidth: number,
-    imageHeight: number
+    imageWidth: number = 0,
+    imageHeight: number = 0
 ): number {
     const screenRatio = screenHeight / screenWidth;
     const imageRatio = imageHeight / imageWidth;
@@ -159,8 +159,8 @@ function calculateInitialScale(
 }
 
 function calculateInitalTranslate(
-    imageWidth: number,
-    imageHeight: number
+    imageWidth: number = 0,
+    imageHeight: number = 0
 ): TranslateType {
     const getTranslate = (axis: string): number => {
         const imageSize = axis === 'x' ? imageWidth : imageHeight;
@@ -179,6 +179,33 @@ function calculateInitalTranslate(
     };
 }
 
+function fetchImageSize(images: Array<Image> = []) {
+    return images.reduce((acc, image, index) => {
+        if (
+            image.source &&
+            image.source.uri &&
+            (!image.width || !image.height)
+        ) {
+            const imageSize = new Promise((resolve, reject) => {
+                Image.getSize(
+                    image.source.uri,
+                    (width, height) =>
+                        resolve({
+                            width,
+                            height,
+                            index,
+                        }),
+                    reject
+                );
+            });
+
+            acc.push(imageSize);
+        }
+
+        return acc;
+    }, []);
+}
+
 const getInitalParams = ({
     width,
     height,
@@ -193,9 +220,14 @@ const getInitalParams = ({
     translate: calculateInitalTranslate(width, height),
 });
 
-export default class ImageCollectionView extends Component<PropsType> {
+const getImagesWithoutSize = (images: Array<ImageType>) =>
+    images.filter(({width, height}) => !width || !height);
+
+export default class ImageView extends Component<PropsType> {
     constructor(props: PropsType) {
         super(props);
+
+        this.renderCounter = 1;
 
         // calculate initial scale and translate for images
         this.imageInitialParams = props.images.map(getInitalParams);
@@ -203,11 +235,9 @@ export default class ImageCollectionView extends Component<PropsType> {
         this.state = {
             images: props.images,
             isVisible: props.isVisible,
-
             imageIndex: props.imageIndex,
-            imageScale: 1, // current image scale
-            imageTranslate: {x: 0, y: 0}, // current image translate
-
+            imageScale: 1,
+            imageTranslate: {x: 0, y: 0},
             scrollEnabled: true,
             panelsVisible: true,
             isFlatListRerendered: false,
@@ -242,31 +272,53 @@ export default class ImageCollectionView extends Component<PropsType> {
         this.renderImage = this.renderImage.bind(this);
         this.togglePanels = this.togglePanels.bind(this);
         this.onFlatListRender = this.onFlatListRender.bind(this);
+        this.setSizeForImages = this.setSizeForImages.bind(this);
+
+        const imagesWithoutSize = getImagesWithoutSize(props.images);
+
+        if (imagesWithoutSize.length) {
+            Promise.all(fetchImageSize(imagesWithoutSize)).then(
+                this.setSizeForImages
+            );
+        }
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
-        const {images, isVisible} = this.state;
+        const {images, imageIndex, isVisible} = this.state;
 
         if (
             typeof nextProps.isVisible !== 'undefined' &&
             nextProps.isVisible !== isVisible
         ) {
-            const nextImages = nextProps.images || images;
-            const {width, height} = nextImages[nextProps.imageIndex] || {};
-            const nextScale = calculateInitialScale(width, height);
-            const nextTranslate = calculateInitalTranslate(width, height);
+            if (
+                images !== nextProps.images ||
+                imageIndex !== nextProps.imageIndex
+            ) {
+                this.onNextImagesReceived(
+                    nextProps.images,
+                    nextProps.imageIndex
+                );
+
+                const imagesWithoutSize = getImagesWithoutSize(
+                    nextProps.images
+                );
+
+                if (imagesWithoutSize.length) {
+                    Promise.all(fetchImageSize(imagesWithoutSize)).then(
+                        updatedImages =>
+                            this.onNextImagesReceived(
+                                this.setSizeForImages(updatedImages),
+                                nextProps.imageIndex
+                            )
+                    );
+                }
+            }
 
             this.setState({
                 isVisible: nextProps.isVisible,
-                images: nextImages,
-                imageIndex: nextProps.imageIndex || 0,
-                imageScale: nextScale,
-                imageTranslate: nextTranslate,
                 isFlatListRerendered: false,
             });
 
-            this.imageScaleValue.setValue(nextScale);
-            this.imageTranslateValue.setValue(nextTranslate);
             this.modalBackgroundOpacity.setValue(0);
 
             if (nextProps.isVisible) {
@@ -278,16 +330,36 @@ export default class ImageCollectionView extends Component<PropsType> {
         }
     }
 
+    onNextImagesReceived(images: Array<ImageType>, imageIndex: number = 0) {
+        this.imageInitialParams = images.map(getInitalParams);
+        const {scale, translate} = this.imageInitialParams[imageIndex];
+
+        this.setState({
+            imageIndex,
+            imageScale: scale,
+            imageTranslate: translate,
+            isFlatListRerendered: false,
+        });
+
+        this.imageScaleValue.setValue(scale);
+        this.imageTranslateValue.setValue(translate);
+    }
+
     onFlatListRender(flatList: Node) {
         const {imageIndex, isFlatListRerendered} = this.state;
 
         if (flatList && !isFlatListRerendered) {
-            this.setState({isFlatListRerendered: true});
+            this.setState({
+                isFlatListRerendered: true,
+            });
 
             // Fix for android https://github.com/facebook/react-native/issues/13202
             const nextTick = new Promise(resolve => setTimeout(resolve, 0));
             nextTick.then(() => {
-                flatList.scrollToIndex({index: imageIndex, animated: false});
+                flatList.scrollToIndex({
+                    index: imageIndex,
+                    animated: false,
+                });
             });
         }
     }
@@ -478,6 +550,27 @@ export default class ImageCollectionView extends Component<PropsType> {
         this.setState({images});
     }
 
+    setSizeForImages(nextImages: Array<ImageType>): Array<ImageType> {
+        if (nextImages.length === 0) {
+            return [];
+        }
+
+        const {images} = this.state;
+
+        return images.map((image, index) => {
+            const nextImageSize = nextImages.find(
+                nextImage => nextImage.index === index
+            );
+
+            if (nextImageSize) {
+                image.width = nextImageSize.width;
+                image.height = nextImageSize.height;
+            }
+
+            return image;
+        });
+    }
+
     getInitialScale(index: number): number {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
 
@@ -495,8 +588,12 @@ export default class ImageCollectionView extends Component<PropsType> {
         index: number
     ): {width: number, height: number, transform: any} {
         const {imageIndex} = this.state;
-
         const {width, height} = image;
+
+        if (!width || !height) {
+            return {opacity: 0};
+        }
+
         // very strange caching, fix it with changing size to 1 pixel
         const traslateValue = new Animated.ValueXY(
             calculateInitalTranslate(width, height + 1)
@@ -514,11 +611,7 @@ export default class ImageCollectionView extends Component<PropsType> {
 
         transform.push({scale});
 
-        return {
-            width,
-            height,
-            transform,
-        };
+        return {width, height, transform};
     }
 
     calcultateNextTranslate(
@@ -563,10 +656,7 @@ export default class ImageCollectionView extends Component<PropsType> {
             return nextTranslate;
         };
 
-        return {
-            x: getTranslate('x'),
-            y: getTranslate('y'),
-        };
+        return {x: getTranslate('x'), y: getTranslate('y')};
     }
 
     close() {
@@ -601,6 +691,8 @@ export default class ImageCollectionView extends Component<PropsType> {
     }
 
     renderImage({item: image, index}): Node {
+        const loaded = image.loaded && image.width && image.height;
+
         return (
             <View
                 style={styles.imageContainer}
@@ -613,7 +705,7 @@ export default class ImageCollectionView extends Component<PropsType> {
                     onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                 />
-                {!image.loaded && <ActivityIndicator style={styles.loading} />}
+                {!loaded && <ActivityIndicator style={styles.loading} />}
             </View>
         );
     }
@@ -682,7 +774,7 @@ export default class ImageCollectionView extends Component<PropsType> {
     }
 }
 
-ImageCollectionView.defaultProps = {
+ImageView.defaultProps = {
     images: [],
     imageIndex: 0,
 };
