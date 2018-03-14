@@ -42,7 +42,6 @@ const images = [
 <ImageView
     images={images}
     imageIndex={0}
-    animationType='fade'
     isVisible={this.state.isImageViewVisible}
     renderFooter={(currentImage) => (<View><Text>My footer</Text></View>)}
 />
@@ -65,11 +64,13 @@ Prop name           | Description   | Type      | Default value
 ```js
 {
   source: any, // Image Component source object
-  width: number, // Width of full screen image
-  height: number, // Height of full screen image
+  width: ?number, // Width of full screen image (optional but recommended)
+  height: ?number, // Height of full screen image (optional but recommended)
   // any other props you need to render your footer
 }
 ```
+
+It's recommended to specify width and height to speed up rendering, overwise component needs to fetch images sizes and cache them in images objects passed as props.
 
 ### Next feature: Momentum scroll in zoom mode
 

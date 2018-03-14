@@ -20,8 +20,6 @@ const images = [
                 'https://avatars.mds.yandex.net/get-pdb/49816/d9152cc6-bf48-4e44-b2d5-de73b2e94454/s800',
         },
         title: 'London',
-        width: 800,
-        height: 500,
     },
     {
         source: require('./assets/spb.jpg'),
