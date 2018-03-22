@@ -59,8 +59,10 @@ type PropsType = {
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
 const HEADER_HEIGHT = 60;
+const SCALE_EPSILON = 0.01;
 const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
+const FREEZE_SCROLL_DISTANCE = 15;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
@@ -223,6 +225,9 @@ const getInitalParams = ({
 const getImagesWithoutSize = (images: Array<ImageType>) =>
     images.filter(({width, height}) => !width || !height);
 
+const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
+    Math.abs(scaleA - scaleB) < SCALE_EPSILON;
+
 export default class ImageView extends Component<PropsType> {
     constructor(props: PropsType) {
         super(props);
@@ -290,15 +295,12 @@ export default class ImageView extends Component<PropsType> {
             typeof nextProps.isVisible !== 'undefined' &&
             nextProps.isVisible !== isVisible
         ) {
+            this.onNextImagesReceived(nextProps.images, nextProps.imageIndex);
+
             if (
                 images !== nextProps.images ||
                 imageIndex !== nextProps.imageIndex
             ) {
-                this.onNextImagesReceived(
-                    nextProps.images,
-                    nextProps.imageIndex
-                );
-
                 const imagesWithoutSize = getImagesWithoutSize(
                     nextProps.images
                 );
@@ -423,7 +425,7 @@ export default class ImageView extends Component<PropsType> {
 
         // if image not scaled and fits to the screen
         if (
-            imageScale === imageInitialScale &&
+            scalesAreEqual(imageScale, imageInitialScale) &&
             height * imageInitialScale < screenHeight
         ) {
             const backgroundOpacity = Math.abs(
@@ -439,7 +441,7 @@ export default class ImageView extends Component<PropsType> {
         const currentDistance = getDistance(touches);
         const initialDistance = getDistance(this.initialTouches);
 
-        const scrollEnabled = Math.abs(dy) < 10;
+        const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE;
         this.setState({scrollEnabled});
 
         if (!initialDistance) {
@@ -473,15 +475,16 @@ export default class ImageView extends Component<PropsType> {
         const imageInitialTranslate = this.getInitialTranslate();
 
         // Position haven't changed, so it just tap
-        if (event && !dx && !dy && imageScale === scale) {
+        if (event && !dx && !dy && scalesAreEqual(imageScale, scale)) {
+            // Double tap timer is launced, its double tap
+
             if (this.doubleTapTimer) {
                 clearTimeout(this.doubleTapTimer);
                 this.doubleTapTimer = null;
 
-                scale =
-                    scale === imageInitialScale
-                        ? scale * SCALE_MAX_MULTIPLIER
-                        : imageInitialScale;
+                scale = scalesAreEqual(imageInitialScale, scale)
+                    ? scale * SCALE_MAX_MULTIPLIER
+                    : imageInitialScale;
 
                 Animated.timing(this.imageScaleValue, {
                     toValue: scale,
