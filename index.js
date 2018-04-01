@@ -754,8 +754,8 @@ export default class ImageView extends Component<PropsType> {
                     style={styles.container}
                     ref={this.onFlatListRender}
                     renderSeparator={() => null}
-                    keyExtractor={(image: ImageType): number =>
-                        images.indexOf(image)
+                    keyExtractor={(image: ImageType): string =>
+                        images.indexOf(image).toString()
                     }
                     onScroll={this.onNextImage}
                     renderItem={this.renderImage}
