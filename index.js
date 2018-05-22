@@ -65,46 +65,53 @@ const SCALE_MAX_MULTIPLIER = 3;
 const FREEZE_SCROLL_DISTANCE = 15;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 
-const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
-const styles = StyleSheet.create({
-    container: {
-        width: screenWidth,
-        height: screenHeight,
-    },
-    header: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 100,
-        height: HEADER_HEIGHT,
-        width: screenWidth,
-    },
-    imageContainer: {
-        width: screenWidth,
-        height: screenHeight,
-        overflow: 'hidden',
-    },
-    loading: {
-        position: 'absolute',
-        top: screenHeight / 2 - 20,
-        alignSelf: 'center',
-    },
-    closeButton: {
-        alignSelf: 'flex-end',
-    },
-    closeButton__text: {
-        padding: 25,
-        backgroundColor: 'transparent',
-        fontSize: 25,
-        color: '#FFF',
-        textAlign: 'center',
-    },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        zIndex: 100,
-    },
+function createStyles({screenWidth, screenHeight}) {
+  return StyleSheet.create({
+      container: {
+          width: screenWidth,
+          height: screenHeight,
+      },
+      header: {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          zIndex: 100,
+          height: HEADER_HEIGHT,
+          width: screenWidth,
+      },
+      imageContainer: {
+          width: screenWidth,
+          height: screenHeight,
+          overflow: 'hidden',
+      },
+      loading: {
+          position: 'absolute',
+          top: screenHeight / 2 - 20,
+          alignSelf: 'center',
+      },
+      closeButton: {
+          alignSelf: 'flex-end',
+      },
+      closeButton__text: {
+          padding: 25,
+          backgroundColor: 'transparent',
+          fontSize: 25,
+          color: '#FFF',
+          textAlign: 'center',
+      },
+      footer: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          zIndex: 100,
+      },
+  });
+}
+let styles = createStyles(getScreenDimensions());
+
+const getScreenDimensions () => ({
+  screenWidth: Dimensions.get('window').width,
+  screenHeight: Dimensions.get('window').height,
 });
 
 const generatePanHandlers = (onStart, onMove, onRelease): any =>
@@ -125,6 +132,7 @@ const getScale = (currentDistance: number, initialDistance: number): number =>
 const pow2abs = (a: number, b: number): number => Math.pow(Math.abs(a - b), 2);
 
 function getItemLayout(data, index): any {
+    const {screenWidth, screenHeight} = this.state.screenDimensions;
     return {
         length: screenWidth,
         offset: screenWidth * index,
@@ -144,7 +152,8 @@ function getDistance(touches: Array<TouchType>): number {
 
 function calculateInitialScale(
     imageWidth: number = 0,
-    imageHeight: number = 0
+    imageHeight: number = 0,
+    {screenWidth, screenHeight}
 ): number {
     const screenRatio = screenHeight / screenWidth;
     const imageRatio = imageHeight / imageWidth;
@@ -162,7 +171,8 @@ function calculateInitialScale(
 
 function calculateInitalTranslate(
     imageWidth: number = 0,
-    imageHeight: number = 0
+    imageHeight: number = 0,
+    {screenWidth, screenHeight}
 ): TranslateType {
     const getTranslate = (axis: string): number => {
         const imageSize = axis === 'x' ? imageWidth : imageHeight;
@@ -218,8 +228,8 @@ const getInitalParams = ({
     scale: number,
     translate: TranslateType,
 } => ({
-    scale: calculateInitialScale(width, height),
-    translate: calculateInitalTranslate(width, height),
+    scale: calculateInitialScale(width, height, this.state.screenDimensions),
+    translate: calculateInitalTranslate(width, height, this.state.screenDimensions),
 });
 
 const getImagesWithoutSize = (images: Array<ImageType>) =>
@@ -235,7 +245,8 @@ export default class ImageView extends Component<PropsType> {
         this.renderCounter = 1;
 
         // calculate initial scale and translate for images
-        this.imageInitialParams = props.images.map(getInitalParams);
+        const initialScreenDimensions = getScreenDimensions();
+        this.imageInitialParams = props.images.map(getInitalParams.bind(null, initialScreenDimensions));
 
         this.state = {
             images: props.images,
@@ -246,6 +257,7 @@ export default class ImageView extends Component<PropsType> {
             scrollEnabled: true,
             panelsVisible: true,
             isFlatListRerendered: false,
+            screenDimensions: initialScreenDimensions,
         };
 
         this.isScrolling = false;
@@ -278,6 +290,8 @@ export default class ImageView extends Component<PropsType> {
         this.togglePanels = this.togglePanels.bind(this);
         this.onFlatListRender = this.onFlatListRender.bind(this);
         this.setSizeForImages = this.setSizeForImages.bind(this);
+        this.onChangeDimension = this.onChangeDimension.bind(this);
+        this.getInitalParams = this.getInitalParams.bind(this);
 
         const imagesWithoutSize = getImagesWithoutSize(props.images);
 
@@ -286,6 +300,26 @@ export default class ImageView extends Component<PropsType> {
                 this.setSizeForImages
             );
         }
+    }
+
+    componentDidMount() {
+        styles = createStyles(this.state.screenDimensions);
+        Dimensions.addEventListener('change', this.onChangeDimension);
+    }
+
+    onChangeDimension({window, screen}) {
+        let screenDimensions = {
+            screenWidth: window.width,
+            screenHeight: window.height,
+        };
+        this.setState({screenDimensions});
+        styles = createStyles(screenDimensions);
+
+        this.onNextImagesReceived(this.props.images, this.state.imageIndex);
+    }
+
+    componentWillUnmount() {
+        Dimensions.removeEventListener('change', this.onChangeDimension);
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
@@ -333,7 +367,7 @@ export default class ImageView extends Component<PropsType> {
     }
 
     onNextImagesReceived(images: Array<ImageType>, imageIndex: number = 0) {
-        this.imageInitialParams = images.map(getInitalParams);
+        this.imageInitialParams = images.map(getInitalParams.bind(null, this.state.screenDimensions));
         const {scale, translate} = this.imageInitialParams[imageIndex];
 
         this.setState({
@@ -370,9 +404,9 @@ export default class ImageView extends Component<PropsType> {
         const {imageIndex} = this.state;
         const {x} = event.nativeEvent.contentOffset || {x: 0};
 
-        const nextImageIndex = Math.round(x / screenWidth);
+        const nextImageIndex = Math.round(x / this.state.screenDimensions.screenWidth);
 
-        this.isScrolling = x % screenWidth > 10;
+        this.isScrolling = x % this.state.screenDimensions.screenWidth > 10;
 
         if (imageIndex !== nextImageIndex && nextImageIndex >= 0) {
             const nextImageScale = this.getInitialScale(nextImageIndex);
@@ -419,14 +453,14 @@ export default class ImageView extends Component<PropsType> {
         }
 
         // Do not allow to move image verticaly untill it fits to the screen
-        if (imageScale * height > screenHeight) {
+        if (imageScale * height > this.state.screenDimensions.screenHeight) {
             this.imageTranslateValue.y.setValue(y + dy);
         }
 
         // if image not scaled and fits to the screen
         if (
             scalesAreEqual(imageScale, imageInitialScale) &&
-            height * imageInitialScale < screenHeight
+            height * imageInitialScale < this.state.screenDimensions.screenHeight
         ) {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
@@ -599,7 +633,7 @@ export default class ImageView extends Component<PropsType> {
 
         // very strange caching, fix it with changing size to 1 pixel
         const traslateValue = new Animated.ValueXY(
-            calculateInitalTranslate(width, height + 1)
+            calculateInitalTranslate(width, height + 1, this.state.screenDimensions)
         );
 
         const transform =
@@ -629,7 +663,7 @@ export default class ImageView extends Component<PropsType> {
 
         const getTranslate = (axis: string): number => {
             const imageSize = axis === 'x' ? width : height;
-            const screenSize = axis === 'x' ? screenWidth : screenHeight;
+            const screenSize = axis === 'x' ? this.state.screenDimensions.screenWidth : this.state.screenDimensions.screenHeight;
             const leftLimit = (scale * imageSize - imageSize) / 2;
             const rightLimit = screenSize - imageSize - leftLimit;
 
@@ -759,7 +793,7 @@ export default class ImageView extends Component<PropsType> {
                     }
                     onScroll={this.onNextImage}
                     renderItem={this.renderImage}
-                    getItemLayout={getItemLayout}
+                    getItemLayout={getItemLayout.bind(this)}
                 />
                 {renderFooter && (
                     <Animated.View
