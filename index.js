@@ -223,7 +223,7 @@ function fetchImageSize(images: Array<Image> = []) {
     }, []);
 }
 
-const getInitalParams = ({
+const getInitialParams = ({
     width,
     height,
 }: {
@@ -256,7 +256,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         // calculate initial scale and translate for images
         const initialScreenDimensions = getScreenDimensions();
         this.imageInitialParams = props.images.map(
-            getInitalParams.bind(null, initialScreenDimensions)
+            getInitialParams.bind(null, initialScreenDimensions)
         );
 
         this.state = {
@@ -302,7 +302,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.onFlatListRender = this.onFlatListRender.bind(this);
         this.setSizeForImages = this.setSizeForImages.bind(this);
         this.onChangeDimension = this.onChangeDimension.bind(this);
-        this.getInitalParams = this.getInitalParams.bind(this);
+        this.getInitialParams = this.getInitialParams.bind(this);
 
         const imagesWithoutSize = getImagesWithoutSize(props.images);
 
@@ -380,7 +380,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     onNextImagesReceived(images: Array<ImageType>, imageIndex: number = 0) {
         this.imageInitialParams = images.map(
-            getInitalParams.bind(null, this.state.screenDimensions)
+            getInitialParams.bind(null, this.state.screenDimensions)
         );
         const {scale, translate} = this.imageInitialParams[imageIndex];
 
