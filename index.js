@@ -54,7 +54,7 @@ type PropsType = {
     isVisible: boolean,
     animation: 'none' | 'fade',
     onClose: () => {},
-    renderFooter: () => {},
+    renderFooter: ImageType => {},
 };
 
 type StateType = {
@@ -174,7 +174,7 @@ function calculateInitialScale(
     return 1;
 }
 
-function calculateInitalTranslate(
+function calculateInitialTranslate(
     imageWidth: number = 0,
     imageHeight: number = 0,
     {screenWidth, screenHeight}
@@ -223,22 +223,21 @@ function fetchImageSize(images: Array<Image> = []) {
     }, []);
 }
 
-const getInitialParams = ({
-    width,
-    height,
-}: {
-    width: number,
-    height: number,
-}): {
+const getInitialParams = (
+    {
+        width,
+        height,
+    }: {
+        width: number,
+        height: number,
+    },
+    screenDimensions: Object
+): {
     scale: number,
     translate: TranslateType,
 } => ({
-    scale: calculateInitialScale(width, height, this.state.screenDimensions),
-    translate: calculateInitalTranslate(
-        width,
-        height,
-        this.state.screenDimensions
-    ),
+    scale: calculateInitialScale(width, height, screenDimensions),
+    translate: calculateInitialTranslate(width, height, screenDimensions),
 });
 
 const getImagesWithoutSize = (images: Array<ImageType>) =>
@@ -251,12 +250,10 @@ export default class ImageView extends Component<PropsType, StateType> {
     constructor(props: PropsType) {
         super(props);
 
-        this.renderCounter = 1;
-
         // calculate initial scale and translate for images
         const initialScreenDimensions = getScreenDimensions();
-        this.imageInitialParams = props.images.map(
-            getInitialParams.bind(null, initialScreenDimensions)
+        this.imageInitialParams = props.images.map(image =>
+            getInitialParams(image, initialScreenDimensions)
         );
 
         this.state = {
@@ -302,7 +299,6 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.onFlatListRender = this.onFlatListRender.bind(this);
         this.setSizeForImages = this.setSizeForImages.bind(this);
         this.onChangeDimension = this.onChangeDimension.bind(this);
-        this.getInitialParams = this.getInitialParams.bind(this);
 
         const imagesWithoutSize = getImagesWithoutSize(props.images);
 
@@ -379,8 +375,8 @@ export default class ImageView extends Component<PropsType, StateType> {
     }
 
     onNextImagesReceived(images: Array<ImageType>, imageIndex: number = 0) {
-        this.imageInitialParams = images.map(
-            getInitialParams.bind(null, this.state.screenDimensions)
+        this.imageInitialParams = images.map(image =>
+            getInitialParams(image, this.state.screenDimensions)
         );
         const {scale, translate} = this.imageInitialParams[imageIndex];
 
@@ -664,7 +660,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         // very strange caching, fix it with changing size to 1 pixel
         const translateValue = new Animated.ValueXY(
-            calculateInitalTranslate(width, height + 1, screenDimensions)
+            calculateInitialTranslate(width, height + 1, screenDimensions)
         );
 
         const transform =
