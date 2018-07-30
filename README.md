@@ -53,6 +53,8 @@ const images = [
 
 Prop name           | Description   | Type      | Default value
 --------------------|---------------|-----------|----------------
+`glideAlways`  | Emulates ScrollView glide animation if built-in was not triggered  | boolean | false
+`glideAlwaysDelay`  | Defines delay in milliseconds for glideAlways  | number | 75
 `images`  | Array of images to display, see below image item description | array | []
 `imageIndex` | Current index of image to display | number | 0
 `isVisible` | Is modal shown or not | boolean | false
