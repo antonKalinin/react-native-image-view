@@ -367,6 +367,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     componentWillUnmount() {
         Dimensions.removeEventListener('change', this.onChangeDimension);
+
         if (this.glideAlwaysTimer) {
             clearTimeout(this.glideAlwaysTimer);
         }
@@ -533,6 +534,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         if (this.glideAlwaysTimer) {
             clearTimeout(this.glideAlwaysTimer);
         }
+
         if (this.props.glideAlways && Platform.OS === 'android') {
             this.glideAlwaysTimer = setTimeout(() => {
                 this.glideAlwaysTimer = null;
@@ -545,9 +547,11 @@ export default class ImageView extends Component<PropsType, StateType> {
                 }
             }, this.props.glideAlwaysDelay);
         }
+
         if (this.isScrolling) {
             return;
         }
+
         const {imageScale} = this.state;
 
         let {_value: scale} = this.imageScaleValue;
@@ -684,6 +688,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             clearTimeout(this.glideAlwaysTimer);
         }
     }
+
     onMomentumScrollEnd() {
         this.isScrolling = false;
     }
