@@ -13,6 +13,7 @@ import {
     PanResponder,
     TouchableOpacity,
     ActivityIndicator,
+    Platform,
 } from 'react-native';
 
 // eslint-disable-next-line
@@ -55,6 +56,8 @@ type PropsType = {
     animation: 'none' | 'fade',
     onClose: () => {},
     renderFooter: ImageType => {},
+    glideAlways?: boolean,
+    glideAlwaysDelay?: number,
 };
 
 type StateType = {
@@ -267,7 +270,8 @@ export default class ImageView extends Component<PropsType, StateType> {
             isFlatListRerendered: false,
             screenDimensions: initialScreenDimensions,
         };
-
+        this.glideAlwaysTimer = null;
+        this.listRef = null;
         this.isScrolling = false;
         this.footerHeight = 0;
         this.initialTouches = [];
@@ -299,6 +303,9 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.onFlatListRender = this.onFlatListRender.bind(this);
         this.setSizeForImages = this.setSizeForImages.bind(this);
         this.onChangeDimension = this.onChangeDimension.bind(this);
+        this.listKeyExtractor = this.listKeyExtractor.bind(this);
+        this.onMomentumScrollBegin = this.onMomentumScrollBegin.bind(this);
+        this.onMomentumScrollEnd = this.onMomentumScrollEnd.bind(this);
 
         const imagesWithoutSize = getImagesWithoutSize(props.images);
 
@@ -360,6 +367,10 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     componentWillUnmount() {
         Dimensions.removeEventListener('change', this.onChangeDimension);
+
+        if (this.glideAlwaysTimer) {
+            clearTimeout(this.glideAlwaysTimer);
+        }
     }
 
     onChangeDimension({window}) {
@@ -395,6 +406,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         const {imageIndex, isFlatListRerendered} = this.state;
 
         if (flatList && !isFlatListRerendered) {
+            this.listRef = flatList;
             this.setState({
                 isFlatListRerendered: true,
             });
@@ -418,7 +430,8 @@ export default class ImageView extends Component<PropsType, StateType> {
             x / this.state.screenDimensions.screenWidth
         );
 
-        this.isScrolling = x % this.state.screenDimensions.screenWidth > 10;
+        this.isScrolling =
+            Math.ceil(x) % this.state.screenDimensions.screenWidth > 10;
 
         if (imageIndex !== nextImageIndex && nextImageIndex >= 0) {
             const nextImageScale = this.getInitialScale(nextImageIndex);
@@ -518,6 +531,27 @@ export default class ImageView extends Component<PropsType, StateType> {
     }
 
     onGestureRelease(event: EventType, gestureState: GestureState) {
+        if (this.glideAlwaysTimer) {
+            clearTimeout(this.glideAlwaysTimer);
+        }
+
+        if (this.props.glideAlways && Platform.OS === 'android') {
+            this.glideAlwaysTimer = setTimeout(() => {
+                this.glideAlwaysTimer = null;
+                // If standard glide is not triggered then emulate it
+                if (this.listRef && this.listRef.scrollToIndex) {
+                    this.listRef.scrollToIndex({
+                        index: this.state.imageIndex,
+                        animated: true,
+                    });
+                }
+            }, this.props.glideAlwaysDelay);
+        }
+
+        if (this.isScrolling) {
+            return;
+        }
+
         const {imageScale} = this.state;
 
         let {_value: scale} = this.imageScaleValue;
@@ -645,6 +679,18 @@ export default class ImageView extends Component<PropsType, StateType> {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
 
         return this.imageInitialParams[imageIndex].translate;
+    }
+
+    onMomentumScrollBegin() {
+        this.isScrolling = true;
+        if (this.glideAlwaysTimer) {
+            // If FlatList started gliding then prevent glideAlways scrolling
+            clearTimeout(this.glideAlwaysTimer);
+        }
+    }
+
+    onMomentumScrollEnd() {
+        this.isScrolling = false;
     }
 
     getImageStyle(
@@ -780,6 +826,10 @@ export default class ImageView extends Component<PropsType, StateType> {
         );
     }
 
+    listKeyExtractor(image: ImageType) {
+        return this.state.images.indexOf(image).toString();
+    }
+
     render(): Node {
         const {animation, renderFooter} = this.props;
         const {images, imageIndex, isVisible, scrollEnabled} = this.state;
@@ -821,12 +871,12 @@ export default class ImageView extends Component<PropsType, StateType> {
                     style={styles.container}
                     ref={this.onFlatListRender}
                     renderSeparator={() => null}
-                    keyExtractor={(image: ImageType): string =>
-                        images.indexOf(image).toString()
-                    }
+                    keyExtractor={this.listKeyExtractor}
                     onScroll={this.onNextImage}
                     renderItem={this.renderImage}
                     getItemLayout={this.getItemLayout}
+                    onMomentumScrollBegin={this.onMomentumScrollBegin}
+                    onMomentumScrollEnd={this.onMomentumScrollEnd}
                 />
                 {renderFooter && (
                     <Animated.View
@@ -847,4 +897,5 @@ export default class ImageView extends Component<PropsType, StateType> {
 ImageView.defaultProps = {
     images: [],
     imageIndex: 0,
+    glideAlwaysDelay: 75,
 };
