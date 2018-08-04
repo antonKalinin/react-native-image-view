@@ -21,6 +21,7 @@ const images = [
         title: 'London',
     },
     {
+        // eslint-disable-next-line
         source: require('./assets/spb.jpg'),
         title: 'St-Petersburg',
         width: 1200,

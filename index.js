@@ -1,7 +1,6 @@
 // @flow
 
-import React, {Component} from 'react';
-import type {Node} from 'react';
+import React, {Component, type Node} from 'react';
 import {
     Text,
     View,
@@ -19,58 +18,17 @@ import {
 // eslint-disable-next-line
 import Modal from 'react-native-root-modal';
 
-type TouchType = {
-    pageX: number,
-    pageY: number,
-};
-
-type EventType = {
-    nativeEvent: {
-        touches: Array<TouchType>,
-    },
-};
-
-type ImageType = {
-    source: any,
-    width: number,
-    height: number,
-    title: ?string,
-};
-
-type TranslateType = {
-    x: number,
-    y: number,
-};
-
-type GestureState = {
-    dx: number,
-    dy: number,
-    vx: number,
-    vy: number,
-};
-
-type PropsType = {
-    images: Array<ImageType>,
-    imageIndex: number,
-    isVisible: boolean,
-    animation: 'none' | 'fade',
-    onClose: () => {},
-    renderFooter: ImageType => {},
-    glideAlways?: boolean,
-    glideAlwaysDelay?: number,
-};
-
-type StateType = {
-    images: Array<ImageType>,
-    isVisible: boolean,
-    imageIndex: number,
-    imageScale: number,
-    imageTranslate: {x: number, y: number},
-    scrollEnabled: boolean,
-    panelsVisible: boolean,
-    isFlatListRerendered: boolean,
-    screenDimensions: {screenWidth: number, screenHeight: number},
-};
+import {
+    type DimensionsType,
+    type EventType,
+    type ImageType,
+    type ImageSizeType,
+    type GestureState,
+    type NativeEventType,
+    type TouchType,
+    type TransitionType,
+    type TranslateType,
+} from './types';
 
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
@@ -199,7 +157,7 @@ function calculateInitialTranslate(
     };
 }
 
-function fetchImageSize(images: Array<Image> = []) {
+function fetchImageSize(images: Array<ImageType> = []) {
     return images.reduce((acc, image, index) => {
         if (
             image.source &&
@@ -227,18 +185,9 @@ function fetchImageSize(images: Array<Image> = []) {
 }
 
 const getInitialParams = (
-    {
-        width,
-        height,
-    }: {
-        width: number,
-        height: number,
-    },
+    {width, height}: DimensionsType,
     screenDimensions: Object
-): {
-    scale: number,
-    translate: TranslateType,
-} => ({
+): TransitionType => ({
     scale: calculateInitialScale(width, height, screenDimensions),
     translate: calculateInitialTranslate(width, height, screenDimensions),
 });
@@ -249,7 +198,32 @@ const getImagesWithoutSize = (images: Array<ImageType>) =>
 const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
     Math.abs(scaleA - scaleB) < SCALE_EPSILON;
 
+type PropsType = {
+    images: Array<ImageType>,
+    imageIndex: number,
+    isVisible: boolean,
+    animation: 'none' | 'fade',
+    onClose: () => {},
+    renderFooter: ImageType => {},
+    glideAlways?: boolean,
+    glideAlwaysDelay?: number,
+};
+
+export type StateType = {
+    images: Array<ImageType>,
+    isVisible: boolean,
+    imageIndex: number,
+    imageScale: number,
+    imageTranslate: {x: number, y: number},
+    scrollEnabled: boolean,
+    panelsVisible: boolean,
+    isFlatListRerendered: boolean,
+    screenDimensions: {screenWidth: number, screenHeight: number},
+};
+
 export default class ImageView extends Component<PropsType, StateType> {
+    static defaultProps = {images: [], imageIndex: 0, glideAlwaysDelay: 75};
+
     constructor(props: PropsType) {
         super(props);
 
@@ -289,23 +263,12 @@ export default class ImageView extends Component<PropsType, StateType> {
         );
 
         this.panResponder = generatePanHandlers(
-            (event: EventType, gestureState: GestureState): void =>
-                this.onGestureStart(event.nativeEvent, gestureState),
+            (event: EventType): void => this.onGestureStart(event.nativeEvent),
             (event: EventType, gestureState: GestureState): void =>
                 this.onGestureMove(event.nativeEvent, gestureState),
             (event: EventType, gestureState: GestureState): void =>
                 this.onGestureRelease(event.nativeEvent, gestureState)
         );
-
-        this.onNextImage = this.onNextImage.bind(this);
-        this.renderImage = this.renderImage.bind(this);
-        this.togglePanels = this.togglePanels.bind(this);
-        this.onFlatListRender = this.onFlatListRender.bind(this);
-        this.setSizeForImages = this.setSizeForImages.bind(this);
-        this.onChangeDimension = this.onChangeDimension.bind(this);
-        this.listKeyExtractor = this.listKeyExtractor.bind(this);
-        this.onMomentumScrollBegin = this.onMomentumScrollBegin.bind(this);
-        this.onMomentumScrollEnd = this.onMomentumScrollEnd.bind(this);
 
         const imagesWithoutSize = getImagesWithoutSize(props.images);
 
@@ -373,7 +336,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
     }
 
-    onChangeDimension({window}) {
+    onChangeDimension = ({window}: {window: DimensionsType}) => {
         const screenDimensions = {
             screenWidth: window.width,
             screenHeight: window.height,
@@ -383,7 +346,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         styles = createStyles(screenDimensions);
 
         this.onNextImagesReceived(this.props.images, this.state.imageIndex);
-    }
+    };
 
     onNextImagesReceived(images: Array<ImageType>, imageIndex: number = 0) {
         this.imageInitialParams = images.map(image =>
@@ -402,11 +365,12 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.imageTranslateValue.setValue(translate);
     }
 
-    onFlatListRender(flatList: Node) {
+    // $FlowFixMe
+    onFlatListRender = flatListRef => {
         const {imageIndex, isFlatListRerendered} = this.state;
 
-        if (flatList && !isFlatListRerendered) {
-            this.listRef = flatList;
+        if (flatListRef && !isFlatListRerendered) {
+            this.listRef = flatListRef;
             this.setState({
                 isFlatListRerendered: true,
             });
@@ -414,15 +378,15 @@ export default class ImageView extends Component<PropsType, StateType> {
             // Fix for android https://github.com/facebook/react-native/issues/13202
             const nextTick = new Promise(resolve => setTimeout(resolve, 0));
             nextTick.then(() => {
-                flatList.scrollToIndex({
+                flatListRef.scrollToIndex({
                     index: imageIndex,
                     animated: false,
                 });
             });
         }
-    }
+    };
 
-    onNextImage(event: EventType) {
+    onNextImage = (event: EventType) => {
         const {imageIndex} = this.state;
         const {x} = event.nativeEvent.contentOffset || {x: 0};
 
@@ -446,9 +410,9 @@ export default class ImageView extends Component<PropsType, StateType> {
             this.imageScaleValue.setValue(nextImageScale);
             this.imageTranslateValue.setValue(nextImageTranslate);
         }
-    }
+    };
 
-    onGestureStart(event: EventType) {
+    onGestureStart(event: NativeEventType) {
         this.initialTouches = event.touches;
         this.currentTouchesNum = event.touches.length;
     }
@@ -457,7 +421,7 @@ export default class ImageView extends Component<PropsType, StateType> {
      * If image is moved from its original position
      * then disable scroll (for ScrollView)
      */
-    onGestureMove(event: EventType, gestureState: GestureState) {
+    onGestureMove(event: NativeEventType, gestureState: GestureState) {
         if (this.isScrolling) {
             return;
         }
@@ -530,7 +494,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.currentTouchesNum = event.touches.length;
     }
 
-    onGestureRelease(event: EventType, gestureState: GestureState) {
+    onGestureRelease(event: NativeEventType, gestureState: GestureState) {
         if (this.glideAlwaysTimer) {
             clearTimeout(this.glideAlwaysTimer);
         }
@@ -539,6 +503,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             this.glideAlwaysTimer = setTimeout(() => {
                 this.glideAlwaysTimer = null;
                 // If standard glide is not triggered then emulate it
+                // $FlowFixMe
                 if (this.listRef && this.listRef.scrollToIndex) {
                     this.listRef.scrollToIndex({
                         index: this.state.imageIndex,
@@ -640,63 +605,40 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.setState({images});
     }
 
-    setSizeForImages(nextImages: Array<ImageType>): Array<ImageType> {
-        if (nextImages.length === 0) {
-            return [];
-        }
-
-        const {images} = this.state;
-
-        return images.map((image, index) => {
-            const nextImageSize = nextImages.find(
-                nextImage => nextImage.index === index
-            );
-
-            /* eslint-disable */
-            if (nextImageSize) {
-                image.width = nextImageSize.width;
-                image.height = nextImageSize.height;
-            }
-            /* eslint-enable */
-
-            return image;
-        });
-    }
-
-    getItemLayout = (data, index): Object => {
-        const {screenWidth} = this.state.screenDimensions;
-
-        return {length: screenWidth, offset: screenWidth * index, index};
-    };
-
-    getInitialScale(index: number): number {
-        const imageIndex = index !== undefined ? index : this.state.imageIndex;
-
-        return this.imageInitialParams[imageIndex].scale;
-    }
-
-    getInitialTranslate(index: number): TranslateType {
-        const imageIndex = index !== undefined ? index : this.state.imageIndex;
-
-        return this.imageInitialParams[imageIndex].translate;
-    }
-
-    onMomentumScrollBegin() {
+    onMomentumScrollBegin = () => {
         this.isScrolling = true;
         if (this.glideAlwaysTimer) {
             // If FlatList started gliding then prevent glideAlways scrolling
             clearTimeout(this.glideAlwaysTimer);
         }
+    };
+
+    onMomentumScrollEnd = () => {
+        this.isScrolling = false;
+    };
+
+    getItemLayout = (_: *, index: number): Object => {
+        const {screenWidth} = this.state.screenDimensions;
+
+        return {length: screenWidth, offset: screenWidth * index, index};
+    };
+
+    getInitialScale(index?: number): number {
+        const imageIndex = index !== undefined ? index : this.state.imageIndex;
+
+        return this.imageInitialParams[imageIndex].scale;
     }
 
-    onMomentumScrollEnd() {
-        this.isScrolling = false;
+    getInitialTranslate(index?: number): TranslateType {
+        const imageIndex = index !== undefined ? index : this.state.imageIndex;
+
+        return this.imageInitialParams[imageIndex].translate;
     }
 
     getImageStyle(
         image: ImageType,
         index: number
-    ): {width: number, height: number, transform: any} {
+    ): {width?: number, height?: number, transform?: any, opacity?: number} {
         const {imageIndex, screenDimensions} = this.state;
         const {width, height} = image;
 
@@ -724,6 +666,45 @@ export default class ImageView extends Component<PropsType, StateType> {
         return {width, height, transform};
     }
 
+    setSizeForImages = (nextImages: Array<ImageSizeType>): Array<ImageType> => {
+        if (nextImages.length === 0) {
+            return [];
+        }
+
+        const {images} = this.state;
+
+        return images.map((image, index) => {
+            const nextImageSize = nextImages.find(
+                nextImage => nextImage.index === index
+            );
+
+            /* eslint-disable */
+            if (nextImageSize) {
+                image.width = nextImageSize.width;
+                image.height = nextImageSize.height;
+            }
+            /* eslint-enable */
+
+            return image;
+        });
+    };
+
+    imageInitialParams: TransitionType[];
+    glideAlwaysTimer: ?TimeoutID;
+    listRef: ?Node;
+    isScrolling: boolean;
+    footerHeight: number;
+    initialTouches: TouchType[];
+    currentTouchesNum: number;
+    doubleTapTimer: ?TimeoutID;
+    modalAnimation: *;
+    modalBackgroundOpacity: *;
+    headerTranslateValue: *;
+    footerTranslateValue: *;
+    imageScaleValue: *;
+    imageTranslateValue: *;
+    panResponder: *;
+
     calculateNextTranslate(
         dx: number,
         dy: number,
@@ -738,7 +719,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         const {x, y} = imageTranslate;
         const {screenWidth, screenHeight} = screenDimensions;
         const {width, height} = images[imageIndex];
-        const {imageInitialScale} = this.getInitialScale();
+        const imageInitialScale = this.getInitialScale();
 
         const getTranslate = (axis: string): number => {
             const imageSize = axis === 'x' ? width : height;
@@ -783,7 +764,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
     }
 
-    togglePanels(isVisible: boolean) {
+    togglePanels(isVisible?: boolean) {
         const panelsVisible =
             typeof isVisible !== 'undefined'
                 ? isVisible
@@ -806,7 +787,10 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
     }
 
-    renderImage({item: image, index}): Node {
+    listKeyExtractor = (image: ImageType): string =>
+        this.state.images.indexOf(image).toString();
+
+    renderImage = ({item: image, index}: {item: *, index: number}): Node => {
         const loaded = image.loaded && image.width && image.height;
 
         return (
@@ -824,11 +808,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 {!loaded && <ActivityIndicator style={styles.loading} />}
             </View>
         );
-    }
-
-    listKeyExtractor(image: ImageType) {
-        return this.state.images.indexOf(image).toString();
-    }
+    };
 
     render(): Node {
         const {animation, renderFooter} = this.props;
@@ -845,7 +825,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             <Animated.Modal
                 visible={isVisible}
                 style={[
-                    styles.modal,
                     animation === 'fade' && {opacity: this.modalAnimation},
                     {backgroundColor},
                 ]}
@@ -893,9 +872,3 @@ export default class ImageView extends Component<PropsType, StateType> {
         );
     }
 }
-
-ImageView.defaultProps = {
-    images: [],
-    imageIndex: 0,
-    glideAlwaysDelay: 75,
-};
