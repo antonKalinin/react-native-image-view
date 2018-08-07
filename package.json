@@ -14,8 +14,6 @@
     "url": "git+https://github.com/antonKalinin/react-native-image-view.git"
   },
   "dependencies": {
-    "react": "^16.4.2",
-    "react-native": "^0.56.0",
     "react-native-root-modal": "^2.2.0"
   },
   "peerDependencies": {
