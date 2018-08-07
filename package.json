@@ -48,7 +48,8 @@
   "files": [
     "package.json",
     "readme.md",
-    "index.js"
+    "index.js",
+    "types.js"
   ],
   "author": "Anton Kalinin",
   "license": "MIT",
