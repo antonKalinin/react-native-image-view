@@ -5,6 +5,7 @@ import {
     Text,
     View,
     Image,
+    Modal,
     Animated,
     FlatList,
     StyleSheet,
@@ -14,9 +15,6 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
-
-// eslint-disable-next-line
-import Modal from 'react-native-root-modal';
 
 import {
     type DimensionsType,
@@ -38,9 +36,17 @@ const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
 const FREEZE_SCROLL_DISTANCE = 15;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
+const defaultBackgroundColor = [0, 0, 0];
 
 function createStyles({screenWidth, screenHeight}) {
     return StyleSheet.create({
+        underlay: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+        },
         container: {
             width: screenWidth,
             height: screenHeight,
@@ -65,11 +71,19 @@ function createStyles({screenWidth, screenHeight}) {
         },
         closeButton: {
             alignSelf: 'flex-end',
+            height: 24,
+            width: 24,
+            borderRadius: 12,
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 25,
+            marginRight: 15,
         },
         closeButton__text: {
-            padding: 25,
             backgroundColor: 'transparent',
             fontSize: 25,
+            lineHeight: 25,
             color: '#FFF',
             textAlign: 'center',
         },
@@ -104,7 +118,6 @@ const generatePanHandlers = (onStart, onMove, onRelease): any =>
 
 const getScale = (currentDistance: number, initialDistance: number): number =>
     currentDistance / initialDistance * SCALE_MULTIPLIER;
-const pow2abs = (a: number, b: number): number => Math.pow(Math.abs(a - b), 2);
 
 function getDistance(touches: Array<TouchType>): number {
     const [a, b] = touches;
@@ -113,7 +126,7 @@ function getDistance(touches: Array<TouchType>): number {
         return 0;
     }
 
-    return Math.sqrt(pow2abs(a.pageX, b.pageX) + pow2abs(a.pageY, b.pageY));
+    return Math.sqrt((a.pageX - b.pageX) ** 2 + (a.pageY - b.pageY) ** 2);
 }
 
 function calculateInitialScale(
@@ -184,6 +197,28 @@ function fetchImageSize(images: Array<ImageType> = []) {
     }, []);
 }
 
+const shortHexRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+const fullHexRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
+
+const isHex = (color: string): boolean =>
+    fullHexRegex.test(color) || shortHexRegex.test(color);
+
+function hexToRgb(hex: string): number[] {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    const input = hex.replace(
+        shortHexRegex,
+        (m, r, g, b) => `${r}${r}${g}${g}${b}${b}`
+    );
+
+    const [match, r, g, b] = [].concat(fullHexRegex.exec(input));
+
+    if (!match) {
+        return [];
+    }
+
+    return [parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)];
+}
+
 const getInitialParams = (
     {width, height}: DimensionsType,
     screenDimensions: Object
@@ -199,14 +234,15 @@ const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
     Math.abs(scaleA - scaleB) < SCALE_EPSILON;
 
 type PropsType = {
+    animationType: 'none' | 'fade' | 'slide',
+    backgroundColor?: string,
+    glideAlways?: boolean,
+    glideAlwaysDelay?: number,
     images: Array<ImageType>,
     imageIndex: number,
     isVisible: boolean,
-    animation: 'none' | 'fade',
     onClose: () => {},
     renderFooter: ImageType => {},
-    glideAlways?: boolean,
-    glideAlwaysDelay?: number,
 };
 
 export type StateType = {
@@ -222,7 +258,13 @@ export type StateType = {
 };
 
 export default class ImageView extends Component<PropsType, StateType> {
-    static defaultProps = {images: [], imageIndex: 0, glideAlwaysDelay: 75};
+    static defaultProps = {
+        backgroundColor: null,
+        images: [],
+        imageIndex: 0,
+        glideAlways: false,
+        glideAlwaysDelay: 75,
+    };
 
     constructor(props: PropsType) {
         super(props);
@@ -660,7 +702,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             index === imageIndex
                 ? this.imageScaleValue
                 : this.getInitialScale(index);
-
+        // $FlowFixMe
         transform.push({scale});
 
         return {width, height, transform};
@@ -790,7 +832,7 @@ export default class ImageView extends Component<PropsType, StateType> {
     listKeyExtractor = (image: ImageType): string =>
         this.state.images.indexOf(image).toString();
 
-    renderImage = ({item: image, index}: {item: *, index: number}): Node => {
+    renderImage = ({item: image, index}: {item: *, index: number}): * => {
         const loaded = image.loaded && image.width && image.height;
 
         return (
@@ -811,24 +853,35 @@ export default class ImageView extends Component<PropsType, StateType> {
     };
 
     render(): Node {
-        const {animation, renderFooter} = this.props;
+        const {animationType, renderFooter, backgroundColor} = this.props;
         const {images, imageIndex, isVisible, scrollEnabled} = this.state;
 
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
         const footerTranslate = this.footerTranslateValue.getTranslateTransform();
-        const backgroundColor = this.modalBackgroundOpacity.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['rgba(0, 0, 0, 0.9)', 'rgba(0, 0, 0, 0.2)'],
-        });
+        const rgbBackgroundColor =
+            backgroundColor && isHex(backgroundColor)
+                ? hexToRgb(backgroundColor)
+                : defaultBackgroundColor;
+        const rgb = rgbBackgroundColor.join(',');
+        const animatedBackgroundColor = this.modalBackgroundOpacity.interpolate(
+            {
+                inputRange: [0, 1],
+                outputRange: [`rgba(${rgb}, 0.9)`, `rgba(${rgb}, 0.2)`],
+            }
+        );
 
         return (
-            <Animated.Modal
+            <Modal
+                transparent
                 visible={isVisible}
-                style={[
-                    animation === 'fade' && {opacity: this.modalAnimation},
-                    {backgroundColor},
-                ]}
+                animationType={animationType}
             >
+                <Animated.View
+                    style={[
+                        {backgroundColor: animatedBackgroundColor},
+                        styles.underlay,
+                    ]}
+                />
                 <Animated.View
                     style={[styles.header, {transform: headerTranslate}]}
                 >
@@ -868,7 +921,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                             renderFooter(images[imageIndex])}
                     </Animated.View>
                 )}
-            </Animated.Modal>
+            </Modal>
         );
     }
 }
