@@ -53,6 +53,7 @@ const images = [
 
 Prop name           | Description   | Type      | Default value | Platform |
 --------------------|---------------|-----------|---------------|----------|
+`animationType` | Type of animation modal presented with | "none", "fade", "slide" | "none" | 
 `backgroundColor` | Background color of the modal in HEX (#0099CC) | string | null | 
 `glideAlways`  | Emulates ScrollView glide animation if built-in was not triggered  | boolean | false | Android
 `glideAlwaysDelay`  | Defines delay in milliseconds for glideAlways  | number | 75 | Android

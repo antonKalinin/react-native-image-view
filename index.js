@@ -875,6 +875,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 transparent
                 visible={isVisible}
                 animationType={animationType}
+                onRequestClose={() => {}}
             >
                 <Animated.View
                     style={[

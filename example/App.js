@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     Dimensions,
+    Platform,
 } from 'react-native';
 
 import ImageView from 'react-native-image-view';
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#000',
+        paddingTop: Platform.select({ios: 0, android: 10}),
     },
     footer: {
         width,
@@ -131,6 +133,7 @@ export default class App extends Component {
                     ))}
                 </View>
                 <ImageView
+                    glideAlways
                     images={images}
                     imageIndex={imageIndex}
                     animationType="fade"
