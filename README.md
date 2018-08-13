@@ -4,9 +4,6 @@ React Native modal image view with pinch zoom and carousel.
 
 Try with expo: https://expo.io/@antonkalinin/react-native-image-view
 
-There is a problem with detecting multiple touches in standard Modal component ([issue](https://github.com/facebook/react-native/issues/14295)) that is why
-this component is using `react-native-root-modal`.
-
 #### Warning: Breaking changes since v2.0.0:
 
 - instead of prop `source` => `images`
