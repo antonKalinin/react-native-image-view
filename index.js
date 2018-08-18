@@ -126,7 +126,10 @@ function getDistance(touches: Array<TouchType>): number {
         return 0;
     }
 
-    return Math.sqrt((a.pageX - b.pageX) ** 2 + (a.pageY - b.pageY) ** 2);
+    // eslint-disable-next-line
+    return Math.sqrt(
+        Math.pow(a.pageX - b.pageX, 2) + Math.pow(a.pageY - b.pageY, 2)
+    );
 }
 
 function calculateInitialScale(
