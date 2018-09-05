@@ -37,6 +37,7 @@ const SCALE_MAX_MULTIPLIER = 3;
 const FREEZE_SCROLL_DISTANCE = 15;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
+const HIT_SLOP = {top: 15, left: 15, right: 15, bottom: 15};
 
 function createStyles({screenWidth, screenHeight}) {
     return StyleSheet.create({
@@ -126,7 +127,6 @@ function getDistance(touches: Array<TouchType>): number {
         return 0;
     }
 
-    // eslint-disable-next-line
     return Math.sqrt(
         Math.pow(a.pageX - b.pageX, 2) + Math.pow(a.pageY - b.pageY, 2)
     );
@@ -174,7 +174,7 @@ function calculateInitialTranslate(
 }
 
 function fetchImageSize(images: Array<ImageType> = []) {
-    return images.reduce((acc, image, index) => {
+    return images.reduce((acc, image) => {
         if (
             image.source &&
             image.source.uri &&
@@ -187,7 +187,7 @@ function fetchImageSize(images: Array<ImageType> = []) {
                         resolve({
                             width,
                             height,
-                            index,
+                            index: image.index,
                         }),
                     reject
                 );
@@ -229,6 +229,9 @@ const getInitialParams = (
     scale: calculateInitialScale(width, height, screenDimensions),
     translate: calculateInitialTranslate(width, height, screenDimensions),
 });
+
+const addIndexesToImages = (images: Array<ImageType>) =>
+    images.map((image, index) => ({...image, index}));
 
 const getImagesWithoutSize = (images: Array<ImageType>) =>
     images.filter(({width, height}) => !width || !height);
@@ -315,7 +318,9 @@ export default class ImageView extends Component<PropsType, StateType> {
                 this.onGestureRelease(event.nativeEvent, gestureState)
         );
 
-        const imagesWithoutSize = getImagesWithoutSize(props.images);
+        const imagesWithoutSize = getImagesWithoutSize(
+            addIndexesToImages(props.images)
+        );
 
         if (imagesWithoutSize.length) {
             Promise.all(fetchImageSize(imagesWithoutSize)).then(
@@ -343,7 +348,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 imageIndex !== nextProps.imageIndex
             ) {
                 const imagesWithoutSize = getImagesWithoutSize(
-                    nextProps.images
+                    addIndexesToImages(nextProps.images)
                 );
 
                 if (imagesWithoutSize.length) {
@@ -397,9 +402,13 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.imageInitialParams = images.map(image =>
             getInitialParams(image, this.state.screenDimensions)
         );
-        const {scale, translate} = this.imageInitialParams[imageIndex];
+        const {scale, translate} = this.imageInitialParams[imageIndex] || {
+            scale: 1,
+            translate: {},
+        };
 
         this.setState({
+            images,
             imageIndex,
             imageScale: scale,
             imageTranslate: translate,
@@ -412,7 +421,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     // $FlowFixMe
     onFlatListRender = flatListRef => {
-        const {imageIndex, isFlatListRerendered} = this.state;
+        const {images, imageIndex, isFlatListRerendered} = this.state;
 
         if (flatListRef && !isFlatListRerendered) {
             this.listRef = flatListRef;
@@ -421,13 +430,15 @@ export default class ImageView extends Component<PropsType, StateType> {
             });
 
             // Fix for android https://github.com/facebook/react-native/issues/13202
-            const nextTick = new Promise(resolve => setTimeout(resolve, 0));
-            nextTick.then(() => {
-                flatListRef.scrollToIndex({
-                    index: imageIndex,
-                    animated: false,
+            if (images.length > 0) {
+                const nextTick = new Promise(resolve => setTimeout(resolve, 0));
+                nextTick.then(() => {
+                    flatListRef.scrollToIndex({
+                        index: imageIndex,
+                        animated: false,
+                    });
                 });
-            });
+            }
         }
     };
 
@@ -670,14 +681,16 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     getInitialScale(index?: number): number {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
+        const imageParams = this.imageInitialParams[imageIndex];
 
-        return this.imageInitialParams[imageIndex].scale;
+        return imageParams ? imageParams.scale : 1;
     }
 
     getInitialTranslate(index?: number): TranslateType {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
+        const imageParams = this.imageInitialParams[imageIndex];
 
-        return this.imageInitialParams[imageIndex].translate;
+        return imageParams ? imageParams.translate : {x: 0, y: 0};
     }
 
     getImageStyle(
@@ -890,6 +903,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     style={[styles.header, {transform: headerTranslate}]}
                 >
                     <TouchableOpacity
+                        hitSlop={HIT_SLOP}
                         style={styles.closeButton}
                         onPress={() => {
                             this.close();
@@ -922,6 +936,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                         }}
                     >
                         {typeof renderFooter === 'function' &&
+                            images[imageIndex] &&
                             renderFooter(images[imageIndex])}
                     </Animated.View>
                 )}
