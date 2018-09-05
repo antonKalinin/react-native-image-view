@@ -15,6 +15,7 @@
             "functions": "ignore"
         }],
         "no-console": 0,
+        "no-restricted-properties": 0,
         "object-curly-spacing": ["error", "never"],
         "prettier/prettier": "error",
         "react/prop-types": ["error", {"customValidators": ["skipUndeclared"]}],

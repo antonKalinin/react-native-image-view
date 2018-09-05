@@ -13,7 +13,7 @@ import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
-const images = [
+const cities = [
     {
         source: {
             uri:
@@ -39,6 +39,39 @@ const images = [
     },
 ];
 
+const nature = [
+    {
+        source: {
+            uri: 'https://s4.insidehook.com/Switzerland_Hea_1493053457.jpg',
+        },
+        title: 'Switzerland',
+    },
+
+    {
+        source: {
+            uri:
+                'https://i.pinimg.com/564x/a5/1b/63/a51b63c13c7c41fa333b302fc7938f06.jpg',
+        },
+        title: 'USA',
+        width: 400,
+        height: 800,
+    },
+    {
+        source: {
+            uri:
+                'https://guidetoiceland.imgix.net/4935/x/0/top-10-beautiful-waterfalls-of-iceland-8?auto=compress%2Cformat&ch=Width%2CDPR&dpr=1&ixlib=php-2.1.1&w=883&s=1fb8e5e1906e1d18fc6b08108a9dde8d',
+        },
+        title: 'Iceland',
+        width: 880,
+        height: 590,
+    },
+];
+
+const tabs = [
+    {title: 'Cities', images: cities},
+    {title: 'Nature', images: nature},
+];
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -47,6 +80,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#000',
         paddingTop: Platform.select({ios: 0, android: 10}),
+    },
+    tabs: {
+        flexDirection: 'row',
+    },
+    tab: {
+        flex: 1,
+        height: 30,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+    },
+    tabTitle: {
+        color: '#EEE',
+    },
+    tabTitleActive: {
+        fontWeight: '700',
+        color: '#FFF',
     },
     footer: {
         width,
@@ -74,9 +123,10 @@ export default class App extends Component {
         super(props);
 
         this.state = {
+            activeTab: 0,
             imageIndex: 0,
             isImageViewVisible: false,
-            likes: images.reduce((acc, image) => {
+            likes: [...cities, ...nature].reduce((acc, image) => {
                 acc[image.title] = 0;
 
                 return acc;
@@ -109,7 +159,8 @@ export default class App extends Component {
     }
 
     render() {
-        const {isImageViewVisible, imageIndex} = this.state;
+        const {isImageViewVisible, activeTab, imageIndex} = this.state;
+        const images = tabs[activeTab].images || [];
 
         return (
             <View style={styles.container}>
@@ -132,6 +183,29 @@ export default class App extends Component {
                         </TouchableOpacity>
                     ))}
                 </View>
+                <View style={styles.tabs}>
+                    {tabs.map(({title}, index) => (
+                        <TouchableOpacity
+                            style={styles.tab}
+                            key={title}
+                            onPress={() => {
+                                this.setState({
+                                    activeTab: index,
+                                });
+                            }}
+                        >
+                            <Text
+                                style={[
+                                    styles.tabTitle,
+                                    index === activeTab &&
+                                        styles.tabTitleActive,
+                                ]}
+                            >
+                                {title}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
                 <ImageView
                     glideAlways
                     images={images}
@@ -139,6 +213,7 @@ export default class App extends Component {
                     animationType="fade"
                     isVisible={isImageViewVisible}
                     renderFooter={this.renderFooter}
+                    onClose={() => this.setState({isImageViewVisible: false})}
                 />
             </View>
         );
