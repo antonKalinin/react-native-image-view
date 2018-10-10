@@ -641,9 +641,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
                 duration: 150,
-            }).start(() => {
-                this.close();
-            });
+            }).start(this.close);
         }
 
         this.setState({
@@ -814,14 +812,6 @@ export default class ImageView extends Component<PropsType, StateType> {
         return {x: getTranslate('x'), y: getTranslate('y')};
     }
 
-    close() {
-        this.setState({isVisible: false});
-
-        if (typeof this.props.onClose === 'function') {
-            this.props.onClose();
-        }
-    }
-
     togglePanels(isVisible?: boolean) {
         const panelsVisible =
             typeof isVisible !== 'undefined'
@@ -847,6 +837,14 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     listKeyExtractor = (image: ImageType): string =>
         this.state.images.indexOf(image).toString();
+
+    close = () => {
+        this.setState({isVisible: false});
+
+        if (typeof this.props.onClose === 'function') {
+            this.props.onClose();
+        }
+    };
 
     renderImage = ({item: image, index}: {item: *, index: number}): * => {
         const loaded = image.loaded && image.width && image.height;
@@ -891,7 +889,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 transparent
                 visible={isVisible}
                 animationType={animationType}
-                onRequestClose={() => {}}
+                onRequestClose={this.close}
             >
                 <Animated.View
                     style={[
@@ -905,9 +903,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     <TouchableOpacity
                         hitSlop={HIT_SLOP}
                         style={styles.closeButton}
-                        onPress={() => {
-                            this.close();
-                        }}
+                        onPress={this.close}
                     >
                         <Text style={styles.closeButton__text}>×</Text>
                     </TouchableOpacity>

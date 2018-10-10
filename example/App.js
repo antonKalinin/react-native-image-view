@@ -9,7 +9,8 @@ import {
     Platform,
 } from 'react-native';
 
-import ImageView from 'react-native-image-view';
+import ImageView from './ImageView';
+// import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
