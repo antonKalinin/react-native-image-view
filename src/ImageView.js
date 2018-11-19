@@ -1,22 +1,19 @@
 // @flow
 
-import React, {Component, type Node} from 'react';
+import React, {Component, type Node, type ComponentType} from 'react';
 import {
-    Text,
-    View,
-    Image,
-    Modal,
-    Animated,
-    FlatList,
-    StyleSheet,
-    Dimensions,
-    PanResponder,
-    TouchableOpacity,
     ActivityIndicator,
+    Animated,
+    Dimensions,
+    FlatList,
+    Modal,
     Platform,
+    View,
 } from 'react-native';
 
 import {
+    type ControlType,
+    type ControlsType,
     type DimensionsType,
     type EventType,
     type ImageType,
@@ -28,74 +25,30 @@ import {
     type TranslateType,
 } from './types';
 
+import {
+    addIndexesToImages,
+    calculateInitialTranslate,
+    fetchImageSize,
+    generatePanHandlers,
+    getImagesWithoutSize,
+    getScale,
+    getDistance,
+    getInitialParams,
+    hexToRgb,
+    isHex,
+    scalesAreEqual,
+} from './utils';
+
+import createStyles from './styles';
+import {Close, Prev, Next} from './controls';
+
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
 const HEADER_HEIGHT = 60;
-const SCALE_EPSILON = 0.01;
-const SCALE_MULTIPLIER = 1.2;
 const SCALE_MAX_MULTIPLIER = 3;
 const FREEZE_SCROLL_DISTANCE = 15;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
-const HIT_SLOP = {top: 15, left: 15, right: 15, bottom: 15};
-
-function createStyles({screenWidth, screenHeight}) {
-    return StyleSheet.create({
-        underlay: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-        },
-        container: {
-            width: screenWidth,
-            height: screenHeight,
-        },
-        header: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 100,
-            height: HEADER_HEIGHT,
-            width: screenWidth,
-        },
-        imageContainer: {
-            width: screenWidth,
-            height: screenHeight,
-            overflow: 'hidden',
-        },
-        loading: {
-            position: 'absolute',
-            top: screenHeight / 2 - 20,
-            alignSelf: 'center',
-        },
-        closeButton: {
-            alignSelf: 'flex-end',
-            height: 24,
-            width: 24,
-            borderRadius: 12,
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: 25,
-            marginRight: 15,
-        },
-        closeButton__text: {
-            backgroundColor: 'transparent',
-            fontSize: 25,
-            lineHeight: 25,
-            color: '#FFF',
-            textAlign: 'center',
-        },
-        footer: {
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            zIndex: 100,
-        },
-    });
-}
 
 const getScreenDimensions = () => ({
     screenWidth: Dimensions.get('window').width,
@@ -104,155 +57,25 @@ const getScreenDimensions = () => ({
 
 let styles = createStyles(getScreenDimensions());
 
-const generatePanHandlers = (onStart, onMove, onRelease): any =>
-    PanResponder.create({
-        onStartShouldSetPanResponder: (): boolean => true,
-        onStartShouldSetPanResponderCapture: (): boolean => true,
-        onMoveShouldSetPanResponder: (): boolean => true,
-        onMoveShouldSetPanResponderCapture: (): boolean => true,
-        onPanResponderGrant: onStart,
-        onPanResponderMove: onMove,
-        onPanResponderRelease: onRelease,
-        onPanResponderTerminate: onRelease,
-        onPanResponderTerminationRequest: (): void => {},
-    });
-
-const getScale = (currentDistance: number, initialDistance: number): number =>
-    currentDistance / initialDistance * SCALE_MULTIPLIER;
-
-function getDistance(touches: Array<TouchType>): number {
-    const [a, b] = touches;
-
-    if (a == null || b == null) {
-        return 0;
-    }
-
-    return Math.sqrt(
-        Math.pow(a.pageX - b.pageX, 2) + Math.pow(a.pageY - b.pageY, 2)
-    );
-}
-
-function calculateInitialScale(
-    imageWidth: number = 0,
-    imageHeight: number = 0,
-    {screenWidth, screenHeight}
-): number {
-    const screenRatio = screenHeight / screenWidth;
-    const imageRatio = imageHeight / imageWidth;
-
-    if (imageWidth > screenWidth || imageHeight > screenHeight) {
-        if (screenRatio > imageRatio) {
-            return screenWidth / imageWidth;
-        }
-
-        return screenHeight / imageHeight;
-    }
-
-    return 1;
-}
-
-function calculateInitialTranslate(
-    imageWidth: number = 0,
-    imageHeight: number = 0,
-    {screenWidth, screenHeight}
-): TranslateType {
-    const getTranslate = (axis: string): number => {
-        const imageSize = axis === 'x' ? imageWidth : imageHeight;
-        const screenSize = axis === 'x' ? screenWidth : screenHeight;
-
-        if (imageWidth >= imageHeight) {
-            return (screenSize - imageSize) / 2;
-        }
-
-        return screenSize / 2 - imageSize / 2;
-    };
-
-    return {
-        x: getTranslate('x'),
-        y: getTranslate('y'),
-    };
-}
-
-function fetchImageSize(images: Array<ImageType> = []) {
-    return images.reduce((acc, image) => {
-        if (
-            image.source &&
-            image.source.uri &&
-            (!image.width || !image.height)
-        ) {
-            const imageSize = new Promise((resolve, reject) => {
-                Image.getSize(
-                    image.source.uri,
-                    (width, height) =>
-                        resolve({
-                            width,
-                            height,
-                            index: image.index,
-                        }),
-                    reject
-                );
-            });
-
-            acc.push(imageSize);
-        }
-
-        return acc;
-    }, []);
-}
-
-const shortHexRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-const fullHexRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
-
-const isHex = (color: string): boolean =>
-    fullHexRegex.test(color) || shortHexRegex.test(color);
-
-function hexToRgb(hex: string): number[] {
-    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-    const input = hex.replace(
-        shortHexRegex,
-        (m, r, g, b) => `${r}${r}${g}${g}${b}${b}`
-    );
-
-    const [match, r, g, b] = [].concat(fullHexRegex.exec(input));
-
-    if (!match) {
-        return [];
-    }
-
-    return [parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)];
-}
-
-const getInitialParams = (
-    {width, height}: DimensionsType,
-    screenDimensions: Object
-): TransitionType => ({
-    scale: calculateInitialScale(width, height, screenDimensions),
-    translate: calculateInitialTranslate(width, height, screenDimensions),
-});
-
-const addIndexesToImages = (images: Array<ImageType>) =>
-    images.map((image, index) => ({...image, index}));
-
-const getImagesWithoutSize = (images: Array<ImageType>) =>
-    images.filter(({width, height}) => !width || !height);
-
-const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
-    Math.abs(scaleA - scaleB) < SCALE_EPSILON;
-
 type PropsType = {
     animationType: 'none' | 'fade' | 'slide',
     backgroundColor?: string,
     glideAlways?: boolean,
     glideAlwaysDelay?: number,
-    images: Array<ImageType>,
+    images: ImageType[],
     imageIndex: number,
     isVisible: boolean,
     onClose: () => {},
     renderFooter: ImageType => {},
+    controls: {
+        close?: ComponentType<ControlType>,
+        next?: ComponentType<ControlType> | boolean,
+        prev?: ComponentType<ControlType> | boolean,
+    },
 };
 
 export type StateType = {
-    images: Array<ImageType>,
+    images: ImageType[],
     isVisible: boolean,
     imageIndex: number,
     imageScale: number,
@@ -270,6 +93,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         imageIndex: 0,
         glideAlways: false,
         glideAlwaysDelay: 75,
+        controls: {close: Close, prev: null, next: null},
     };
 
     constructor(props: PropsType) {
@@ -306,9 +130,8 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.footerTranslateValue = new Animated.ValueXY();
 
         this.imageScaleValue = new Animated.Value(this.getInitialScale());
-        this.imageTranslateValue = new Animated.ValueXY(
-            this.getInitialTranslate()
-        );
+        const {x, y} = this.getInitialTranslate();
+        this.imageTranslateValue = new Animated.ValueXY({x, y});
 
         this.panResponder = generatePanHandlers(
             (event: EventType): void => this.onGestureStart(event.nativeEvent),
@@ -478,7 +301,7 @@ export default class ImageView extends Component<PropsType, StateType> {
      * then disable scroll (for ScrollView)
      */
     onGestureMove(event: NativeEventType, gestureState: GestureState) {
-        if (this.isScrolling) {
+        if (this.isScrolling && this.state.scrollEnabled) {
             return;
         }
 
@@ -703,9 +526,12 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
 
         // very strange caching, fix it with changing size to 1 pixel
-        const translateValue = new Animated.ValueXY(
-            calculateInitialTranslate(width, height + 1, screenDimensions)
+        const {x, y} = calculateInitialTranslate(
+            width,
+            height + 1,
+            screenDimensions
         );
+        const translateValue = new Animated.ValueXY({x, y});
 
         const transform =
             index === imageIndex
@@ -721,6 +547,21 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         return {width, height, transform};
     }
+
+    getControls = (): ControlsType => {
+        const {close, prev, next} = this.props.controls;
+        const controls = {close, prev: undefined, next: undefined};
+
+        if (prev) {
+            controls.prev = prev === true ? Prev : prev;
+        }
+
+        if (next) {
+            controls.next = next === true ? Next : next;
+        }
+
+        return controls;
+    };
 
     setSizeForImages = (nextImages: Array<ImageSizeType>): Array<ImageType> => {
         if (nextImages.length === 0) {
@@ -745,9 +586,27 @@ export default class ImageView extends Component<PropsType, StateType> {
         });
     };
 
+    scrollToNext = () => {
+        if (this.listRef && typeof this.listRef.scrollToIndex === 'function') {
+            this.listRef.scrollToIndex({
+                index: this.state.imageIndex + 1,
+                animated: true,
+            });
+        }
+    };
+
+    scrollToPrev = () => {
+        if (this.listRef && typeof this.listRef.scrollToIndex === 'function') {
+            this.listRef.scrollToIndex({
+                index: this.state.imageIndex - 1,
+                animated: true,
+            });
+        }
+    };
+
     imageInitialParams: TransitionType[];
     glideAlwaysTimer: ?TimeoutID;
-    listRef: ?Node;
+    listRef: *;
     isScrolling: boolean;
     footerHeight: number;
     initialTouches: TouchType[];
@@ -868,8 +727,16 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     render(): Node {
         const {animationType, renderFooter, backgroundColor} = this.props;
-        const {images, imageIndex, isVisible, scrollEnabled} = this.state;
+        const {
+            images,
+            imageIndex,
+            imageScale,
+            isVisible,
+            scrollEnabled,
+        } = this.state;
 
+        const {close, prev, next} = this.getControls();
+        const imageInitialScale = this.getInitialScale();
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
         const footerTranslate = this.footerTranslateValue.getTranslateTransform();
         const rgbBackgroundColor =
@@ -883,6 +750,11 @@ export default class ImageView extends Component<PropsType, StateType> {
                 outputRange: [`rgba(${rgb}, 0.9)`, `rgba(${rgb}, 0.2)`],
             }
         );
+
+        const isPrevVisible =
+            imageScale === imageInitialScale && imageIndex > 0;
+        const isNextVisible =
+            imageScale === imageInitialScale && imageIndex < images.length - 1;
 
         return (
             <Modal
@@ -898,15 +770,17 @@ export default class ImageView extends Component<PropsType, StateType> {
                     ]}
                 />
                 <Animated.View
-                    style={[styles.header, {transform: headerTranslate}]}
+                    style={[
+                        styles.header,
+                        {
+                            transform: headerTranslate,
+                        },
+                    ]}
                 >
-                    <TouchableOpacity
-                        hitSlop={HIT_SLOP}
-                        style={styles.closeButton}
-                        onPress={this.close}
-                    >
-                        <Text style={styles.closeButton__text}>×</Text>
-                    </TouchableOpacity>
+                    {!!close &&
+                        React.createElement(close, {
+                            onPress: this.close,
+                        })}
                 </Animated.View>
                 <FlatList
                     horizontal
@@ -924,6 +798,12 @@ export default class ImageView extends Component<PropsType, StateType> {
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
                 />
+                {prev &&
+                    isPrevVisible &&
+                    React.createElement(prev, {onPress: this.scrollToPrev})}
+                {next &&
+                    isNextVisible &&
+                    React.createElement(next, {onPress: this.scrollToNext})}
                 {renderFooter && (
                     <Animated.View
                         style={[styles.footer, {transform: footerTranslate}]}

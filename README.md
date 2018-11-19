@@ -12,6 +12,12 @@ Try with expo: https://expo.io/@antonkalinin/react-native-image-view
 ## Installation
 
 ```bash
+yarn add react-native-image-view
+```
+
+or
+
+```bash
 npm install --save react-native-image-view
 ```
 
@@ -59,6 +65,7 @@ Prop name           | Description   | Type      | Default value | Platform |
 `isVisible` | Is modal shown or not | boolean | false | 
 `onClose` | Function called on modal closed | function | none | 
 `renderFooter` | Function returns a footer element | function | none | 
+`controls` | Config of available controls (see below) | Object | {close: true} | 
 
 #### Image item:
 
@@ -73,7 +80,19 @@ Prop name           | Description   | Type      | Default value | Platform |
 
 It's recommended to specify width and height to speed up rendering, overwise component needs to fetch images sizes and cache them in images objects passed as props.
 
-### Next feature: Momentum scroll in zoom mode
+#### controls prop:
+
+```js
+type ControlType = React.Component<{onPress: () => void}> | null | boolean,
+
+{
+  close: ControlType // Component for close button in up right corner, as onPress prop accepts function to close modal
+  next: ControlType, // Component for next image button, as onPress prop accepts function to scroll to next image
+  prev: ControlType, // Component for previous image button, as onPress prop accepts function to scroll to previous image
+}
+```
+
+To use default components just set `{next: true, prev: true}`, close is showing by default. To create custom controls check src/controls.
 
 ### License
   [MIT](LICENSE)

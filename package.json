@@ -2,9 +2,8 @@
   "name": "react-native-image-view",
   "version": "2.0.12",
   "description": "React Native modal image view with pinch zoom",
-  "main": "index.js",
+  "main": "src/ImageView",
   "scripts": {
-    "test": "eslint index.js",
     "flow": "flow",
     "eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
     "postversion": "git push origin master && git push --tags origin master"
@@ -43,8 +42,7 @@
   "files": [
     "package.json",
     "readme.md",
-    "index.js",
-    "types.js"
+    "src"
   ],
   "author": "Anton Kalinin",
   "license": "MIT",

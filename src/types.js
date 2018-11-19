@@ -1,4 +1,16 @@
 // @flow
+import {type ComponentType} from 'react';
+
+export type ControlType = {
+    onPress: () => void,
+};
+
+export type ControlsType = {
+    close?: ComponentType<ControlType>,
+    next?: ComponentType<ControlType>,
+    prev?: ComponentType<ControlType>,
+};
+
 export type TouchType = {
     pageX: number,
     pageY: number,
@@ -32,6 +44,7 @@ export type GestureState = {
 };
 
 export type DimensionsType = {width: number, height: number};
+export type ScreenDimensionsType = {screenWidth: number, screenHeight: number};
 
 export type ImageSizeType = DimensionsType & {index: number};
 
