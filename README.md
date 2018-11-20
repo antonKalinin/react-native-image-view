@@ -58,6 +58,7 @@ Prop name           | Description   | Type      | Default value | Platform |
 --------------------|---------------|-----------|---------------|----------|
 `animationType` | Type of animation modal presented with | "none", "fade", "slide" | "none" | 
 `backgroundColor` | Background color of the modal in HEX (#0099CC) | string | null | 
+`controls` | Config of available controls (see below) | Object | {close: true} | 
 `glideAlways`  | Emulates ScrollView glide animation if built-in was not triggered  | boolean | false | Android
 `glideAlwaysDelay`  | Defines delay in milliseconds for glideAlways  | number | 75 | Android
 `images`  | Array of images to display, see below image item description | array | [] | 
@@ -65,7 +66,6 @@ Prop name           | Description   | Type      | Default value | Platform |
 `isVisible` | Is modal shown or not | boolean | false | 
 `onClose` | Function called on modal closed | function | none | 
 `renderFooter` | Function returns a footer element | function | none | 
-`controls` | Config of available controls (see below) | Object | {close: true} | 
 
 #### Image item:
 

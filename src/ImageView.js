@@ -68,7 +68,7 @@ type PropsType = {
     onClose: () => {},
     renderFooter: ImageType => {},
     controls: {
-        close?: ComponentType<ControlType>,
+        close?: ComponentType<ControlType> | boolean,
         next?: ComponentType<ControlType> | boolean,
         prev?: ComponentType<ControlType> | boolean,
     },
@@ -93,7 +93,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         imageIndex: 0,
         glideAlways: false,
         glideAlwaysDelay: 75,
-        controls: {close: Close, prev: null, next: null},
+        controls: {prev: null, next: null},
     };
 
     constructor(props: PropsType) {
@@ -550,7 +550,11 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     getControls = (): ControlsType => {
         const {close, prev, next} = this.props.controls;
-        const controls = {close, prev: undefined, next: undefined};
+        const controls = {close: Close, prev: undefined, next: undefined};
+
+        if (close === null) {
+            controls.close = null;
+        }
 
         if (prev) {
             controls.prev = prev === true ? Prev : prev;
@@ -778,9 +782,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     ]}
                 >
                     {!!close &&
-                        React.createElement(close, {
-                            onPress: this.close,
-                        })}
+                        React.createElement(close, {onPress: this.close})}
                 </Animated.View>
                 <FlatList
                     horizontal

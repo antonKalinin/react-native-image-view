@@ -6,7 +6,7 @@ export type ControlType = {
 };
 
 export type ControlsType = {
-    close?: ComponentType<ControlType>,
+    close?: ?ComponentType<ControlType>,
     next?: ComponentType<ControlType>,
     prev?: ComponentType<ControlType>,
 };
