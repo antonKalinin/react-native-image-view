@@ -766,6 +766,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 visible={isVisible}
                 animationType={animationType}
                 onRequestClose={this.close}
+                supportedOrientations={['portrait', 'landscape']}
             >
                 <Animated.View
                     style={[

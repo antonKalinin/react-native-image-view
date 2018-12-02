@@ -37,6 +37,7 @@ export default function createStyles({screenWidth, screenHeight}) {
             position: 'absolute',
             bottom: 0,
             left: 0,
+            right: 0,
             zIndex: 100,
         },
     });

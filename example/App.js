@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     footer: {
-        width,
+        width: '100%',
         height: 50,
         flexDirection: 'row',
         alignItems: 'center',
