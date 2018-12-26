@@ -1,24 +1,25 @@
 {
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "App.js",
   "private": true,
   "dependencies": {
-    "expo": "^25.0.0",
-    "react": "16.0.0",
-    "react-native": "https://github.com/expo/react-native/archive/sdk-25.0.0.tar.gz",
+    "expo": "^31.0.0",
+    "react": "16.5.0",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-31.0.0.tar.gz",
     "react-native-image-view": "2.1.1"
   },
   "devDependencies": {
-    "babel-eslint": "8.2.3",
-    "eslint": "4.19.1",
-    "eslint-config-airbnb": "16.1.0",
-    "eslint-config-prettier": "2.9.0",
-    "eslint-plugin-flowtype": "2.49.3",
-    "eslint-plugin-import": "2.12.0",
-    "eslint-plugin-jsx-a11y": "6.0.3",
-    "eslint-plugin-prettier": "2.6.0",
-    "eslint-plugin-react": "7.8.2",
-    "flow-bin": "0.73.0",
-    "prettier": "1.13.4"
+    "@babel/runtime": "^7.2.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.11.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^3.3.0",
+    "eslint-plugin-flowtype": "^3.2.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-prettier": "^3.0.0",
+    "eslint-plugin-react": "^7.11.1",
+    "flow-bin": "^0.89.0",
+    "prettier": "1.15.3"
   },
   "scripts": {
     "eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check"

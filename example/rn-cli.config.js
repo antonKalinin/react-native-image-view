@@ -1,16 +1,15 @@
 const path = require('path');
 
-const config = {
-    extraNodeModules: {
-        'react-native': path.resolve(__dirname, 'node_modules/react-native'),
-        react: path.resolve(__dirname, 'node_modules/react'),
+module.exports = {
+    resolver: {
+        extraNodeModules: {
+            react: path.resolve(__dirname, 'node_modules/react'),
+            'react-native': path.resolve(
+                __dirname,
+                'node_modules/react-native'
+            ),
+        },
     },
-    getProjectRoots() {
-        return [
-            // Keep your project directory.
-            path.resolve(__dirname),
-            path.resolve(__dirname, '..'), // path to the external module
-        ];
-    },
+    projectRoot: path.resolve(__dirname),
+    watchFolders: [path.resolve(__dirname, '..')],
 };
-module.exports = config;

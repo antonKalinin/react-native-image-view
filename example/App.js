@@ -1,3 +1,4 @@
+import {registerRootComponent} from 'expo';
 import React, {Component} from 'react';
 import {
     Text,
@@ -9,8 +10,8 @@ import {
     Platform,
 } from 'react-native';
 
-// import ImageView from '../src/ImageView';
-import ImageView from 'react-native-image-view';
+import ImageView from '../src/experimental/ImageView';
+// import ImageView from 'react-native-image-view';
 
 const {width} = Dimensions.get('window');
 
@@ -26,8 +27,6 @@ const cities = [
         // eslint-disable-next-line
         source: require('./assets/spb.jpg'),
         title: 'St-Petersburg',
-        width: 1200,
-        height: 800,
     },
     {
         source: {
@@ -35,8 +34,6 @@ const cities = [
                 'https://cdn.pixabay.com/photo/2017/08/17/10/47/paris-2650808_960_720.jpg',
         },
         title: 'Paris',
-        width: 806,
-        height: 720,
     },
 ];
 
@@ -54,8 +51,6 @@ const nature = [
                 'https://i.pinimg.com/564x/a5/1b/63/a51b63c13c7c41fa333b302fc7938f06.jpg',
         },
         title: 'USA',
-        width: 400,
-        height: 800,
     },
     {
         source: {
@@ -63,8 +58,6 @@ const nature = [
                 'https://guidetoiceland.imgix.net/4935/x/0/top-10-beautiful-waterfalls-of-iceland-8?auto=compress%2Cformat&ch=Width%2CDPR&dpr=1&ixlib=php-2.1.1&w=883&s=1fb8e5e1906e1d18fc6b08108a9dde8d',
         },
         title: 'Iceland',
-        width: 880,
-        height: 590,
     },
 ];
 
@@ -220,3 +213,5 @@ export default class App extends Component {
         );
     }
 }
+
+registerRootComponent(App);

@@ -28,6 +28,10 @@ export default function createStyles({screenWidth, screenHeight}) {
             height: screenHeight,
             overflow: 'hidden',
         },
+        image: {
+            width: screenWidth,
+            height: 200,
+        },
         loading: {
             position: 'absolute',
             top: screenHeight / 2 - 20,
