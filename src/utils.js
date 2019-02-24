@@ -30,12 +30,13 @@ export const generatePanHandlers = (
         onPanResponderRelease: onRelease,
         onPanResponderTerminate: onRelease,
         onPanResponderTerminationRequest: (): void => {},
+        onShouldBlockNativeResponder: () => false,
     });
 
 export const getScale = (
     currentDistance: number,
     initialDistance: number
-): number => currentDistance / initialDistance * SCALE_MULTIPLIER;
+): number => (currentDistance / initialDistance) * SCALE_MULTIPLIER;
 
 export const getDistance = (touches: Array<TouchType>): number => {
     const [a, b] = touches;

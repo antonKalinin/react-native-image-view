@@ -26,6 +26,7 @@
     "import/extensions": "off",
     "import/no-unresolved": "off",
     "react/require-default-props": "off",
+    "react/destructuring-assignment": "off",
     "global-require": "off",
     "no-restricted-properties": "off",
     "no-unused-vars": "error",

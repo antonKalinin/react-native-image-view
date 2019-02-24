@@ -65,6 +65,9 @@ type PropsType = {
     images: ImageType[],
     imageIndex: number,
     isVisible: boolean,
+    isTapZoomEnabled: boolean,
+    isPinchZoomEnabled: boolean,
+    isSwipeCloseEnabled: boolean,
     onClose: () => {},
     renderFooter: ImageType => {},
     controls: {
@@ -91,6 +94,9 @@ export default class ImageView extends Component<PropsType, StateType> {
         backgroundColor: null,
         images: [],
         imageIndex: 0,
+        isTapZoomEnabled: true,
+        isPinchZoomEnabled: true,
+        isSwipeCloseEnabled: true,
         glideAlways: false,
         glideAlwaysDelay: 75,
         controls: {prev: null, next: null},
@@ -309,6 +315,8 @@ export default class ImageView extends Component<PropsType, StateType> {
             this.initialTouches = event.touches;
         }
 
+        const {isSwipeCloseEnabled, isPinchZoomEnabled} = this.props;
+
         const {
             images,
             imageIndex,
@@ -334,6 +342,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         // if image not scaled and fits to the screen
         if (
+            isSwipeCloseEnabled &&
             scalesAreEqual(imageScale, imageInitialScale) &&
             height * imageInitialScale < screenHeight
         ) {
@@ -357,7 +366,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             return;
         }
 
-        if (touches.length < 2) {
+        if (!isPinchZoomEnabled || touches.length < 2) {
             return;
         }
 
@@ -397,6 +406,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         }
 
         const {imageScale} = this.state;
+        const {isSwipeCloseEnabled, isTapZoomEnabled} = this.props;
 
         let {_value: scale} = this.imageScaleValue;
         const {_value: modalBackgroundOpacity} = this.modalBackgroundOpacity;
@@ -409,7 +419,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         if (event && !dx && !dy && scalesAreEqual(imageScale, scale)) {
             // Double tap timer is launched, its double tap
 
-            if (this.doubleTapTimer) {
+            if (isTapZoomEnabled && this.doubleTapTimer) {
                 clearTimeout(this.doubleTapTimer);
                 this.doubleTapTimer = null;
 
@@ -458,6 +468,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
         // Close modal with animation if image not scaled and high vertical gesture speed
         if (
+            isSwipeCloseEnabled &&
             scale === imageInitialScale &&
             Math.abs(vy) >= IMAGE_SPEED_FOR_CLOSE
         ) {
@@ -655,7 +666,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 } else {
                     nextTranslate =
                         screenSize / 2 -
-                        imageSize * (scale / imageInitialScale) / 2;
+                        (imageSize * (scale / imageInitialScale)) / 2;
                 }
 
                 return nextTranslate;
