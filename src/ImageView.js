@@ -567,6 +567,10 @@ export default class ImageView extends Component<PropsType, StateType> {
             controls.close = null;
         }
 
+        if (close) {
+            controls.close = close === true ? Close : close;
+        }
+
         if (prev) {
             controls.prev = prev === true ? Prev : prev;
         }
