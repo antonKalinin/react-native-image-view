@@ -161,10 +161,13 @@ export default class ImageView extends Component<PropsType, StateType> {
     componentDidMount() {
         styles = createStyles(this.state.screenDimensions);
         Dimensions.addEventListener('change', this.onChangeDimension);
+        console.warn('inDidMount')
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
         const {images, imageIndex, isVisible} = this.state;
+
+        console.warn('willRecieveProps')
 
         if (
             typeof nextProps.isVisible !== 'undefined' &&
@@ -209,6 +212,7 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     componentWillUnmount() {
         Dimensions.removeEventListener('change', this.onChangeDimension);
+        console.warn('in willUnMount')
 
         if (this.glideAlwaysTimer) {
             clearTimeout(this.glideAlwaysTimer);
