@@ -101,6 +101,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         glideAlwaysDelay: 75,
         controls: {prev: null, next: null},
     };
+
     constructor(props: PropsType) {
         super(props);
 
@@ -234,7 +235,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             scale: 1,
             translate: {},
         };
-        console.warn('in onNextImageReceived')
 
         this.setState({
             images,
@@ -286,7 +286,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             const nextImageScale = this.getInitialScale(nextImageIndex);
             const nextImageTranslate = this.getInitialTranslate(nextImageIndex);
 
-            console.warn('in onNextImage')
             this.setState({
                 imageIndex: nextImageIndex,
                 imageScale: nextImageScale,
@@ -775,7 +774,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             imageScale === imageInitialScale && imageIndex > 0;
         const isNextVisible =
             imageScale === imageInitialScale && imageIndex < images.length - 1;
-console.warn('aaaaa')
 
         return (
             <Modal
