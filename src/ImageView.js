@@ -235,7 +235,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             scale: 1,
             translate: {},
         };
-        console.log('in onNextImageReceived')
+        console.warn('in onNextImageReceived')
 
         this.setState({
             images,
@@ -287,7 +287,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             const nextImageScale = this.getInitialScale(nextImageIndex);
             const nextImageTranslate = this.getInitialTranslate(nextImageIndex);
 
-            console.log('in onNextImage')
+            console.warn('in onNextImage')
             this.setState({
                 imageIndex: nextImageIndex,
                 imageScale: nextImageScale,
