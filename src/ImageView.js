@@ -161,13 +161,10 @@ export default class ImageView extends Component<PropsType, StateType> {
     componentDidMount() {
         styles = createStyles(this.state.screenDimensions);
         Dimensions.addEventListener('change', this.onChangeDimension);
-        console.warn('inDidMount')
     }
 
     componentWillReceiveProps(nextProps: PropsType) {
         const {images, imageIndex, isVisible} = this.state;
-
-        console.warn('willRecieveProps')
 
         if (
             typeof nextProps.isVisible !== 'undefined' &&
@@ -212,7 +209,6 @@ export default class ImageView extends Component<PropsType, StateType> {
 
     componentWillUnmount() {
         Dimensions.removeEventListener('change', this.onChangeDimension);
-        console.warn('in willUnMount')
 
         if (this.glideAlwaysTimer) {
             clearTimeout(this.glideAlwaysTimer);
@@ -239,7 +235,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             scale: 1,
             translate: {},
         };
-        console.log('in onNextImageReceived')
 
         this.setState({
             images,
@@ -291,7 +286,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             const nextImageScale = this.getInitialScale(nextImageIndex);
             const nextImageTranslate = this.getInitialTranslate(nextImageIndex);
 
-            console.log('in onNextImage')
             this.setState({
                 imageIndex: nextImageIndex,
                 imageScale: nextImageScale,
@@ -780,7 +774,6 @@ export default class ImageView extends Component<PropsType, StateType> {
             imageScale === imageInitialScale && imageIndex > 0;
         const isNextVisible =
             imageScale === imageInitialScale && imageIndex < images.length - 1;
-console.warn('aaaaaaa')
         return (
             <Modal
                 transparent
