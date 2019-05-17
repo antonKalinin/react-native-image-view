@@ -1,6 +1,7 @@
 // @flow
 
 import React, {Component, type Node, type ComponentType} from 'react';
+import _ from 'lodash'
 import {
     ActivityIndicator,
     Animated,
@@ -152,7 +153,9 @@ export default class ImageView extends Component<PropsType, StateType> {
         );
 
         if (imagesWithoutSize.length) {
-            Promise.all(fetchImageSize(imagesWithoutSize)).then(
+            Promise.all(_.map(fetchImageSize(imagesWithoutSize), (promise) => {
+                return promise.catch(error => { return error })
+            })).then(
                 this.setSizeForImages
             );
         }
@@ -181,13 +184,17 @@ export default class ImageView extends Component<PropsType, StateType> {
                 );
 
                 if (imagesWithoutSize.length) {
-                    Promise.all(fetchImageSize(imagesWithoutSize)).then(
-                        updatedImages =>
+                    Promise.all(_.map(fetchImageSize(imagesWithoutSize), (promise) =>{
+                        return promise.catch(error=> { return error })
+                    })).then(
+                        updatedImages => {
+                            _.map(updatedImages, (image, i)=> console.warn('updatedImage[' + i + ']: ', image))
                             this.onNextImagesReceived(
                                 this.setSizeForImages(updatedImages),
                                 nextProps.imageIndex
                             )
-                    );
+                        }
+                    )
                 }
             }
 
