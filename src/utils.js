@@ -115,12 +115,7 @@ export function fetchImageSize(images: Array<ImageType> = []) {
                             height,
                             index: image.index,
                         }),
-                    () => 
-                        reject({
-                            width: 0,
-                            height: 0,
-                            index: image.index,
-                        })
+                    reject
                 );
             });
 
