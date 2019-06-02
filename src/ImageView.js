@@ -69,6 +69,7 @@ type PropsType = {
     isPinchZoomEnabled: boolean,
     isSwipeCloseEnabled: boolean,
     onClose: () => {},
+    onImageChange: (number) => {},
     renderFooter: ImageType => {},
     controls: {
         close?: ComponentType<ControlType> | boolean,
@@ -294,6 +295,10 @@ export default class ImageView extends Component<PropsType, StateType> {
 
             this.imageScaleValue.setValue(nextImageScale);
             this.imageTranslateValue.setValue(nextImageTranslate);
+
+            if (typeof this.props.onImageChange === 'function') {
+                this.props.onImageChange(nextImageIndex);
+            }
         }
     };
 

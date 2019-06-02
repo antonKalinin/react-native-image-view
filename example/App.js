@@ -215,6 +215,7 @@ export default class App extends Component {
                     isVisible={isImageViewVisible}
                     renderFooter={this.renderFooter}
                     onClose={() => this.setState({isImageViewVisible: false})}
+                    onChange={(imageIndex) => {console.log(imageIndex)}}
                 />
             </View>
         );

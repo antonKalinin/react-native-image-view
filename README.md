@@ -68,6 +68,7 @@ Prop name           | Description   | Type      | Default value | Platform |
 `isPinchZoomEnabled` | Zoom image with pinch gesture | boolean | true |
 `isSwipeCloseEnabled` | Close modal with swipe up or down | boolean | true |
 `onClose` | Function called on modal closed | function | none |
+`onImageChange` | Function called when image is changed | function | none |
 `renderFooter` | Function returns a footer element | function | none |
 
 #### Image item:
