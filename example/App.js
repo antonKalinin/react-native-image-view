@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     footer: {
-        width: '100%',
+        width,
         height: 50,
         flexDirection: 'row',
         alignItems: 'center',
@@ -215,7 +215,9 @@ export default class App extends Component {
                     isVisible={isImageViewVisible}
                     renderFooter={this.renderFooter}
                     onClose={() => this.setState({isImageViewVisible: false})}
-                    onChange={(imageIndex) => {console.log(imageIndex)}}
+                    onChange={imageIndex => {
+                        console.log(imageIndex);
+                    }}
                 />
             </View>
         );
