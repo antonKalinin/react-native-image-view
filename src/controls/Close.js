@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.2)',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 25,
+        marginTop: 40,
         marginRight: 15,
     },
     closeButton__text: {
