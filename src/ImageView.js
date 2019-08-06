@@ -788,7 +788,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             imageScale === imageInitialScale && imageIndex > 0;
         const isNextVisible =
             imageScale === imageInitialScale && imageIndex < images.length - 1;
-        
+
         return (
             <Modal
                 transparent
