@@ -42,6 +42,7 @@ import {
 
 import createStyles from './styles';
 import {Close, Prev, Next} from './controls';
+import ImageItem from './ImageItem'
 
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
@@ -722,26 +723,34 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.state.images.indexOf(image).toString();
 
     close = () => {
-        this.setState({isVisible: false});
+        this.setState({isVisible: false, scrollEnabled: true});
 
         if (typeof this.props.onClose === 'function') {
             this.props.onClose();
         }
     };
 
+    disableScroll = () => {
+        this.setState({scrollEnabled: false})
+    }
+        
+    enableScroll = () => {
+        this.setState({scrollEnabled: true})
+    }
+
     renderImage = ({item: image, index}: {item: *, index: number}): * => {
         const loaded = image.loaded && image.width && image.height;
-
+        
         return (
             <View
                 style={styles.imageContainer}
                 onStartShouldSetResponder={(): boolean => true}
             >
-                <Animated.Image
-                    resizeMode="cover"
-                    source={image.source}
+                <ImageItem image={image}
                     style={this.getImageStyle(image, index)}
                     onLoad={(): void => this.onImageLoaded(index)}
+                    disableScroll={this.disableScroll}
+                    enableScroll={this.enableScroll}
                     {...this.panResponder.panHandlers}
                 />
                 {!loaded && <ActivityIndicator style={styles.loading} />}
@@ -779,6 +788,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             imageScale === imageInitialScale && imageIndex > 0;
         const isNextVisible =
             imageScale === imageInitialScale && imageIndex < images.length - 1;
+
         return (
             <Modal
                 transparent
