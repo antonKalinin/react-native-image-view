@@ -72,7 +72,8 @@ export default class ImageItem extends React.Component {
     
     if (image.video && !this.state.active){
       return (
-        <TouchableWithoutFeedback onPress={this.onPress}>
+        <TouchableWithoutFeedback onPress={this.onPress}
+          style={{ height: this.state.deviceHeight * 0.9 }}>
           <View>
             <View>
               <Animated.Image resizeMode="cover"
