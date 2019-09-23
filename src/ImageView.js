@@ -164,21 +164,34 @@ export default class ImageView extends Component<PropsType, StateType> {
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
 
-    componentWillReceiveProps(nextProps: PropsType) {
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (
+            typeof nextProps.isVisible !== 'undefined' &&
+            nextProps.isVisible !== prevState.isVisible
+        ) {
+            return {
+                isVisible: nextProps.isVisible,
+                isFlatListRerendered: false,
+            };
+        }
+        return null;
+    }
+
+    componentDidUpdate(prevProps) {
         const {images, imageIndex, isVisible} = this.state;
 
         if (
-            typeof nextProps.isVisible !== 'undefined' &&
-            nextProps.isVisible !== isVisible
+            typeof this.props.isVisible !== 'undefined' &&
+            this.props.isVisible !== isVisible
         ) {
-            this.onNextImagesReceived(nextProps.images, nextProps.imageIndex);
+            this.onNextImagesReceived(this.props.images, this.props.imageIndex);
 
             if (
-                images !== nextProps.images ||
-                imageIndex !== nextProps.imageIndex
+                images !== this.props.images ||
+                imageIndex !== this.props.imageIndex
             ) {
                 const imagesWithoutSize = getImagesWithoutSize(
-                    addIndexesToImages(nextProps.images)
+                    addIndexesToImages(this.props.images)
                 );
 
                 if (imagesWithoutSize.length) {
@@ -186,20 +199,15 @@ export default class ImageView extends Component<PropsType, StateType> {
                         updatedImages =>
                             this.onNextImagesReceived(
                                 this.setSizeForImages(updatedImages),
-                                nextProps.imageIndex
+                                this.props.imageIndex
                             )
                     );
                 }
             }
 
-            this.setState({
-                isVisible: nextProps.isVisible,
-                isFlatListRerendered: false,
-            });
-
             this.modalBackgroundOpacity.setValue(0);
 
-            if (nextProps.isVisible) {
+            if (this.props.isVisible) {
                 Animated.timing(this.modalAnimation, {
                     duration: 400,
                     toValue: 1,
