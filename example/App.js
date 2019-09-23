@@ -43,7 +43,8 @@ const cities = [
 const nature = [
     {
         source: {
-            uri: 'https://s4.insidehook.com/Switzerland_Hea_1493053457.jpg',
+            uri:
+                'https://images.fineartamerica.com/images/artworkimages/mediumlarge/1/1-forest-in-fog-russian-nature-forest-mist-dmitry-ilyshev.jpg',
         },
         title: 'Switzerland',
     },

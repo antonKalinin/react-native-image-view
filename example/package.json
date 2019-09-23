@@ -2,14 +2,14 @@
   "main": "node_modules/expo/AppEntry.js",
   "private": true,
   "dependencies": {
-    "expo": "^33.0.3",
+    "expo": "^35.0.0",
     "react": "16.8.6",
-    "react-native": "https://github.com/expo/react-native/archive/sdk-33.0.0.tar.gz",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-35.0.0.tar.gz",
     "react-native-image-view": "^2.1.5"
   },
   "devDependencies": {
     "babel-eslint": "10.0.1",
-    "babel-preset-expo": "5.1.1",
+    "babel-preset-expo": "7.0.0",
     "eslint": "5.16.0",
     "eslint-config-airbnb": "17.1.0",
     "eslint-config-prettier": "4.3.0",
