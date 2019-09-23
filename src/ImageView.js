@@ -164,19 +164,6 @@ export default class ImageView extends Component<PropsType, StateType> {
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
 
-    static getDerivedStateFromProps(nextProps, prevState) {
-        if (
-            typeof nextProps.isVisible !== 'undefined' &&
-            nextProps.isVisible !== prevState.isVisible
-        ) {
-            return {
-                isVisible: nextProps.isVisible,
-                isFlatListRerendered: false,
-            };
-        }
-        return null;
-    }
-
     componentDidUpdate(prevProps) {
         const {images, imageIndex, isVisible} = this.state;
 
@@ -204,6 +191,11 @@ export default class ImageView extends Component<PropsType, StateType> {
                     );
                 }
             }
+
+            this.setState({
+                isVisible: this.props.isVisible,
+                isFlatListRerendered: false,
+            });
 
             this.modalBackgroundOpacity.setValue(0);
 
