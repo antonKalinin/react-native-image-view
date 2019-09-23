@@ -164,7 +164,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate() {
         const {images, imageIndex, isVisible} = this.state;
 
         if (
