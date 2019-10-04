@@ -9,6 +9,7 @@ import {
     Modal,
     Platform,
     View,
+    SafeAreaView,
 } from 'react-native';
 
 import {
@@ -69,7 +70,7 @@ type PropsType = {
     isPinchZoomEnabled: boolean,
     isSwipeCloseEnabled: boolean,
     onClose: () => {},
-    onImageChange: (number) => {},
+    onImageChange: number => {},
     renderFooter: ImageType => {},
     controls: {
         close?: ComponentType<ControlType> | boolean,
@@ -802,8 +803,10 @@ export default class ImageView extends Component<PropsType, StateType> {
                         },
                     ]}
                 >
-                    {!!close &&
-                        React.createElement(close, {onPress: this.close})}
+                    <SafeAreaView style={{flex: 1}}>
+                        {!!close &&
+                            React.createElement(close, {onPress: this.close})}
+                    </SafeAreaView>
                 </Animated.View>
                 <FlatList
                     horizontal
