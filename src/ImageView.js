@@ -705,7 +705,7 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.setState({panelsVisible});
 
         Animated.timing(this.headerTranslateValue.y, {
-            toValue: !panelsVisible ? -HEADER_HEIGHT : 0,
+            toValue: !panelsVisible ? -(HEADER_HEIGHT + 44) : 0,
             duration: 200,
             useNativeDriver: true,
         }).start();
@@ -745,7 +745,9 @@ export default class ImageView extends Component<PropsType, StateType> {
                     onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                 />
-                {!loaded && image.height === undefined && <ActivityIndicator style={styles.loading} />}
+                {!loaded && image.height === undefined && (
+                    <ActivityIndicator style={styles.loading} />
+                )}
             </View>
         );
     };
