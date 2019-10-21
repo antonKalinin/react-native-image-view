@@ -745,9 +745,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                 />
-                {!loaded && image.height === undefined && (
-                    <ActivityIndicator style={styles.loading} />
-                )}
+                {!loaded && <ActivityIndicator style={styles.loading} />}
             </View>
         );
     };
