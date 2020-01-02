@@ -1,3 +1,5 @@
+## If you are using React Native >= 0.59.0 I recommend to use the clone of this package https://github.com/jobtoday/react-native-image-viewing as improved and more optimized version!
+
 [![npm version](https://badge.fury.io/js/react-native-image-view.svg)](https://badge.fury.io/js/react-native-image-view)
 
 React Native modal image view with pinch zoom and carousel.
