@@ -1,4 +1,4 @@
-## If you are using React Native >= 0.59.0 it's recommended to use the clone of this package https://github.com/jobtoday/react-native-image-viewing as improved and more optimized version!
+## If you are using React Native >= 0.59.0 it's recommended to use similar package https://github.com/jobtoday/react-native-image-viewing as improved and better supported version!
 
 [![npm version](https://badge.fury.io/js/react-native-image-view.svg)](https://badge.fury.io/js/react-native-image-view)
 
