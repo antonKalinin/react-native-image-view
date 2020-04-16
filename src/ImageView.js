@@ -48,6 +48,7 @@ const SCALE_MAXIMUM = 5;
 const HEADER_HEIGHT = 60;
 const SCALE_MAX_MULTIPLIER = 3;
 const FREEZE_SCROLL_DISTANCE = 15;
+const PRESS_TOLLERANCE = 5;
 const BACKGROUND_OPACITY_MULTIPLIER = 0.003;
 const defaultBackgroundColor = [0, 0, 0];
 
@@ -355,8 +356,8 @@ export default class ImageView extends Component<PropsType, StateType> {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
             );
-
-            this.imageTranslateValue.y.setValue(y + dy);
+            const justPressed = Math.abs(dy) < PRESS_TOLLERANCE; 
+            justPressed ? null : this.imageTranslateValue.y.setValue(y + dy)
             this.modalBackgroundOpacity.setValue(
                 backgroundOpacity > 1 ? 1 : backgroundOpacity
             );
