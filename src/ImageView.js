@@ -829,6 +829,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                     getItemLayout={this.getItemLayout}
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
+                    initialNumToRender={100}
                 />
                 {prev &&
                     isPrevVisible &&
