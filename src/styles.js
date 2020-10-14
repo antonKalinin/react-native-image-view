@@ -1,6 +1,11 @@
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Platform, Dimensions} from 'react-native';
 
 const HEADER_HEIGHT = 60;
+
+//iphoneX以降のデバイス判定に使用
+const WINDOWS_WIDTH = 375;
+const WINDOWS_HEIGHT = 812;
+const { width, height } = Dimensions.get('window');
 
 export default function createStyles({screenWidth, screenHeight}) {
     return StyleSheet.create({
@@ -17,7 +22,7 @@ export default function createStyles({screenWidth, screenHeight}) {
         },
         header: {
             position: 'absolute',
-            top: 0,
+            top: Platform.OS == 'ios' && width >= WINDOWS_WIDTH && height >= WINDOWS_HEIGHT ? 70 : 0,
             left: 0,
             zIndex: 100,
             height: HEADER_HEIGHT,
