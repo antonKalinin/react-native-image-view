@@ -45,5 +45,12 @@ export default function createStyles({screenWidth, screenHeight}) {
             right: 0,
             zIndex: 100,
         },
+        text: {
+            width: '60%',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            color: '#ffffff', 
+            bottom: 25,
+            
+        }
     });
 }

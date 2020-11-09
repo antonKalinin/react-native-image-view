@@ -12,6 +12,8 @@ import {
     View,
 } from 'react-native';
 
+import { Text } from 'native-base'
+
 import {
     type ControlType,
     type ControlsType,
@@ -768,6 +770,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             scrollEnabled,
         } = this.state;
 
+        const imageName = this.props.images
         const {close, prev, next} = this.getControls();
         const imageInitialScale = this.getInitialScale();
         const headerTranslate = this.headerTranslateValue.getTranslateTransform();
@@ -813,6 +816,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 >
                     {!!close &&
                         React.createElement(close, {onPress: this.close})}
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.text}>{imageName[this.state.imageIndex].source.name}</Text>
                 </Animated.View>
                 <FlatList
                     horizontal
