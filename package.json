@@ -1,6 +1,6 @@
 {
   "name": "react-native-image-view",
-  "version": "2.1.4-8",
+  "version": "2.1.4-9",
   "description": "React Native modal image view with pinch zoom",
   "main": "src/ImageView",
   "scripts": {
