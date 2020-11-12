@@ -816,7 +816,9 @@ export default class ImageView extends Component<PropsType, StateType> {
                 >
                     {!!close &&
                         React.createElement(close, {onPress: this.close})}
-                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.text}>{imageName[this.state.imageIndex].source.name}</Text>
+                    <View style={styles.view}>
+                        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.text}>{imageName[this.state.imageIndex].source.name}</Text>
+                    </View>
                 </Animated.View>
                 <FlatList
                     horizontal
