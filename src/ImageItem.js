@@ -43,6 +43,7 @@ export default class ImageItem extends React.Component {
 
   onPress = () => {
     this.props.disableScroll()
+    this.props.onVideoPlay(false)
     this.setState({ active: true, isPlay: true })
   }
   onPlay = () => {
@@ -55,6 +56,7 @@ export default class ImageItem extends React.Component {
   }
   setInitialize = () => {
     this.props.enableScroll()
+    this.props.onVideoPlay(true)
     this.setState({ active: false, isPlay: false })
   }
 
@@ -67,6 +69,7 @@ export default class ImageItem extends React.Component {
       scrollEnabled,
       disableScroll,
       enableScroll,
+      onVideoPlay,
       ...others
     } = this.props
     

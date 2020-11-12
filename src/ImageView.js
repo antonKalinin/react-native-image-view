@@ -740,6 +740,10 @@ export default class ImageView extends Component<PropsType, StateType> {
         this.setState({scrollEnabled: true})
     }
 
+    onVideoPlay = (isVisible) => {
+        this.togglePanels(isVisible)
+    }
+
     renderImage = ({item: image, index}: {item: *, index: number}): * => {
         const loaded = image.loaded && image.width && image.height;
         
@@ -750,6 +754,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             >
                 <ImageItem image={image}
                     style={this.getImageStyle(image, index)}
+                    onVideoPlay={this.onVideoPlay}
                     onLoad={(): void => this.onImageLoaded(index)}
                     disableScroll={this.disableScroll}
                     enableScroll={this.enableScroll}
