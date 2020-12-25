@@ -45,6 +45,7 @@ import {
 import createStyles from './styles';
 import {Close, Prev, Next} from './controls';
 import ImageItem from './ImageItem'
+import FlashMessage from "react-native-flash-message";
 
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
@@ -819,6 +820,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                         },
                     ]}
                 >
+                    <FlashMessage />
                     {!!close &&
                         React.createElement(close, {onPress: this.close})}
                     <View style={styles.view}>
