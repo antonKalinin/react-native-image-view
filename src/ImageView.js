@@ -247,7 +247,8 @@ export default class ImageView extends Component<PropsType, StateType> {
         });
 
         this.imageScaleValue.setValue(scale);
-        this.imageTranslateValue.setValue(translate);
+        this.imageTranslateValue.x.setValue(translate.x || 0);
+        this.imageTranslateValue.y.setValue(translate.y || 0);
     }
 
     // $FlowFixMe
