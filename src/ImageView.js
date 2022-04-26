@@ -204,7 +204,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 Animated.timing(this.modalAnimation, {
                     duration: 400,
                     toValue: 1,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
 
                 }).start();
             }
@@ -438,7 +438,7 @@ export default class ImageView extends Component<PropsType, StateType> {
                 Animated.timing(this.imageScaleValue, {
                     toValue: scale,
                     duration: 300,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                 }).start();
 
                 this.togglePanels(scale === imageInitialScale);
@@ -462,18 +462,18 @@ export default class ImageView extends Component<PropsType, StateType> {
                     ? Animated.timing(this.modalBackgroundOpacity, {
                         toValue: 0,
                         duration: 100,
-                        useNativeDriver: true,
+                        useNativeDriver: false,
                     })
                     : null,
                 Animated.timing(this.imageTranslateValue.x, {
                     toValue: x,
                     duration: 100,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                 }),
                 Animated.timing(this.imageTranslateValue.y, {
                     toValue: y,
                     duration: 100,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                 }),
             ].filter(Boolean)
         ).start();
@@ -487,7 +487,7 @@ export default class ImageView extends Component<PropsType, StateType> {
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
                 duration: 150,
-                useNativeDriver: true,
+                useNativeDriver: false,
             }).start(this.close);
         }
 
@@ -714,14 +714,14 @@ export default class ImageView extends Component<PropsType, StateType> {
         Animated.timing(this.headerTranslateValue.y, {
             toValue: !panelsVisible ? -(HEADER_HEIGHT + 44) : 0,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
         }).start();
 
         if (this.footerHeight > 0) {
             Animated.timing(this.footerTranslateValue.y, {
                 toValue: !panelsVisible ? this.footerHeight : 0,
                 duration: 200,
-                useNativeDriver: true,
+                useNativeDriver: false,
             }).start();
         }
     }
