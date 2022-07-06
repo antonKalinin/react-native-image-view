@@ -104,6 +104,27 @@ export function fetchImageSize(images: Array<ImageType> = []) {
         if (
             image.source &&
             image.source.uri &&
+            image.source.headers &&
+            (!image.width || !image.height)
+        ) {
+            const imageSize = new Promise((resolve, reject) => {
+                Image.getSizeWithHeaders(
+                    image.source.uri,
+                    image.source.headers,
+                    (width, height) =>
+                        resolve({
+                            width,
+                            height,
+                            index: image.index,
+                        }),
+                    reject
+                );
+            });
+
+            acc.push(imageSize);
+        } else if (
+            image.source &&
+            image.source.uri &&
             (!image.width || !image.height)
         ) {
             const imageSize = new Promise((resolve, reject) => {
